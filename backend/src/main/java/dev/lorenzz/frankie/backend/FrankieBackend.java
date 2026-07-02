@@ -22,7 +22,6 @@ public class FrankieBackend extends JavaPlugin implements Listener, PluginMessag
 
     private static final String CHANNEL = "frankie:tpto";
 
-    // Requests that arrived before the player finished joining (name -> target).
     private final Map<String, String> pending = new ConcurrentHashMap<>();
 
     @Override
@@ -44,7 +43,6 @@ public class FrankieBackend extends JavaPlugin implements Listener, PluginMessag
         ByteArrayDataInput in = ByteStreams.newDataInput(message);
         String who = in.readUTF();
         String target = in.readUTF();
-        // Cross-server tp: the mover may not have spawned here yet -> defer to join.
         if (!teleport(who, target)) {
             pending.put(who.toLowerCase(), target);
         }
@@ -54,13 +52,11 @@ public class FrankieBackend extends JavaPlugin implements Listener, PluginMessag
     public void onJoin(PlayerJoinEvent event) {
         String target = pending.remove(event.getPlayer().getName().toLowerCase());
         if (target != null) {
-            // ponytail: 5-tick delay lets the target load in; bump if teleports miss.
             Bukkit.getScheduler().runTaskLater(this,
                     () -> teleport(event.getPlayer().getName(), target), 5L);
         }
     }
 
-    /** @return true if both players were online here and the teleport ran. */
     private boolean teleport(String whoName, String targetName) {
         Player who = Bukkit.getPlayerExact(whoName);
         Player target = Bukkit.getPlayerExact(targetName);
