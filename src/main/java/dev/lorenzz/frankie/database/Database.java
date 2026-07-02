@@ -69,6 +69,17 @@ public class Database {
                         created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
                     )""");
             statement.executeUpdate("""
+                    CREATE TABLE IF NOT EXISTS frankie_staff_notes (
+                        id INT AUTO_INCREMENT PRIMARY KEY,
+                        target_uuid CHAR(36) NOT NULL,
+                        target_name VARCHAR(16) NOT NULL,
+                        author_uuid CHAR(36) NOT NULL,
+                        author_name VARCHAR(16) NOT NULL,
+                        note TEXT NOT NULL,
+                        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                        INDEX idx_notes_target (target_uuid)
+                    )""");
+            statement.executeUpdate("""
                     CREATE TABLE IF NOT EXISTS frankie_requests (
                         id INT AUTO_INCREMENT PRIMARY KEY,
                         player_uuid CHAR(36) NOT NULL,

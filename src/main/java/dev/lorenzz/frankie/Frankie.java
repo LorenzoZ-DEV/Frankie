@@ -16,6 +16,7 @@ import dev.lorenzz.frankie.database.Database;
 import dev.lorenzz.frankie.database.FriendRepository;
 import dev.lorenzz.frankie.database.PlayerRepository;
 import dev.lorenzz.frankie.database.ReportRepository;
+import dev.lorenzz.frankie.database.StaffNoteRepository;
 import dev.lorenzz.frankie.friend.FriendCommand;
 import dev.lorenzz.frankie.hook.LuckPermsHook;
 import dev.lorenzz.frankie.listener.ConnectionListener;
@@ -24,6 +25,7 @@ import dev.lorenzz.frankie.request.RequestCommand;
 import dev.lorenzz.frankie.staffchat.StaffChatCommand;
 import dev.lorenzz.frankie.staffchat.StaffChatListener;
 import dev.lorenzz.frankie.staffchat.StaffChatManager;
+import dev.lorenzz.frankie.staffnotes.StaffNotesCommand;
 import dev.lorenzz.frankie.teleport.GotoCommand;
 import dev.lorenzz.frankie.teleport.TpToCommand;
 import dev.lorenzz.frankie.util.AsciiArt;
@@ -75,6 +77,7 @@ public class Frankie {
         PlayerRepository players = new PlayerRepository(database);
         FriendRepository friends = new FriendRepository(database);
         ReportRepository reports = new ReportRepository(database);
+        StaffNoteRepository staffNotes = new StaffNoteRepository(database);
         LuckPermsHook luckPerms = new LuckPermsHook(proxy, logger);
         StaffChatManager staffChat = new StaffChatManager(proxy, messages, luckPerms);
 
@@ -97,6 +100,7 @@ public class Frankie {
         commandManager.registerCommand(new ReportCommand(proxy, messages, reports, config));
         commandManager.registerCommand(new RequestCommand(proxy, messages, reports, config));
         commandManager.registerCommand(new FriendCommand(proxy, messages, friends, players, config));
+        commandManager.registerCommand(new StaffNotesCommand(proxy, messages, staffNotes, players));
         commandManager.registerCommand(new TpToCommand(proxy, messages));
         commandManager.registerCommand(new GotoCommand(proxy, messages));
         commandManager.registerCommand(new FrankieCommand(config, messagesConfig, messages, logger));

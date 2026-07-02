@@ -83,6 +83,16 @@ request:
   # Notifica inviata allo staff (permesso: frankie.request.receive).
   staff_format: "%prefix% &#C77DFF%user% &#3F3F46(&#38BDF8%server%&#3F3F46) &#B6B6C2ʀɪᴄʜɪᴇᴅᴇ ᴀɪᴜᴛᴏ &#3F3F46» &e%reason%"
 
+staffnotes:
+
+  prefix: "&#7B2FBE&lɴᴏᴛᴇꜱ &#3F3F46&l•"
+  usage: "%prefix% &#B6B6C2ᴜꜱᴀ &#C77DFF/ꜱᴛᴀꜰꜰɴᴏᴛᴇꜱ <ɢɪᴏᴄᴀᴛᴏʀᴇ> [ɴᴏᴛᴀ]&#B6B6C2."
+  player_not_found: "%prefix% &#B6B6C2ɢɪᴏᴄᴀᴛᴏʀᴇ &#C77DFF%target% &#EF4444ɴᴏɴ ᴛʀᴏᴠᴀᴛᴏ&#B6B6C2."
+  added: "%prefix% &#B6B6C2ɴᴏᴛᴀ ᴀɢɢɪᴜɴᴛᴀ ᴀ &#C77DFF%target%&#B6B6C2."
+  list_empty: "%prefix% &#B6B6C2ɴᴇꜱꜱᴜɴᴀ ɴᴏᴛᴀ ᴘᴇʀ &#C77DFF%target%&#B6B6C2."
+  list_header: "%prefix% &#B6B6C2ɴᴏᴛᴇ ᴅɪ &#C77DFF%target% &#3F3F46(&#4ADE80%count%&#3F3F46)&#B6B6C2:"
+  list_entry: " &#3F3F46• &#71717A%date% &#C77DFF%author% &#3F3F46» &e%note%"
+
 teleport:
 
   prefix: "&#FACC15&lᴛᴘ &#3F3F46&l•"
