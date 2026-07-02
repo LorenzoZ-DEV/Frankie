@@ -1,0 +1,12 @@
+{
+  "id": "frankie",
+  "name": "Frankie",
+  "version": "${version}",
+  "main": "dev.lorenzz.frankie.Frankie",
+  "dependencies": [
+    {
+      "id": "luckperms",
+      "optional": true
+    }
+  ]
+}

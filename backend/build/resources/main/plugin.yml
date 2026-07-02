@@ -1,0 +1,6 @@
+name: FrankieBackend
+version: 1.0
+main: dev.lorenzz.frankie.backend.FrankieBackend
+api-version: "1.21"
+author: Lorenzzz
+description: Backend companion for Frankie proxy /tpto position teleport.

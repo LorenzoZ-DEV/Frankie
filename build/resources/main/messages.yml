@@ -1,0 +1,141 @@
+#                                  F R A N K I E    P R O X Y   C O R E
+#                                          Developed by Lorenzzz
+#
+#⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣶⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+#⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣼⣿⣧⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+#⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣠⣾⣿⣿⣿⣷⣄⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+#⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠹⣿⣿⣿⣿⣿⠏⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢠⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀
+#⣇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢰⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢻⣿⣿⣿⡟⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣸
+#⣿⡄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢹⡆⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣤⣄⡀⠀⠀⠀⠀⠀⠸⣿⣿⣿⠁⠀⠀⠀⠀⠀⢀⣠⣄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢠⡿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢠⣿
+#⢻⣿⡄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⣿⡄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣠⣴⣾⣿⣿⣿⣿⣶⣶⣶⣶⣶⣿⣿⣿⣶⣶⣶⣶⣶⣿⣿⣿⣿⣷⣦⣀⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣿⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢠⣿⡟
+#⠘⣿⣿⣦⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢧⡀⠸⣿⣿⣄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠙⠿⣿⣿⡿⠿⠛⠛⠛⠛⠛⣿⣿⣿⠛⠛⠛⠛⠛⠿⢿⣿⣿⠟⠋⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣠⣾⣿⠇⢀⡼⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣴⣿⣿⠃
+#⠀⠹⣿⣿⣿⣦⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⢿⡏⢿⣿⣿⣷⣄⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠋⠁⠀⠀⠀⠀⠀⠀⠀⣿⣿⣿⠀⠀⠀⠀⠀⠀⠀⠈⠋⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣠⣶⣿⣿⡿⢹⡿⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣴⣿⣿⣿⠏⠀
+#⠀⠀⠘⢿⠍⡍⠻⣷⣦⣄⣀⣀⣀⢀⣀⣀⣀⣼⣧⠘⣿⣿⣿⣿⣿⣶⣦⣤⣤⡄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣿⣿⣿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢠⣤⣤⣴⣶⣿⣿⣿⣿⣿⠃⣸⣧⣀⣀⣀⢀⣀⣀⣀⣠⣤⣾⠟⣋⠀⡿⠋⠀⠀
+#⠀⠀⠀⠀⠁⣦⣷⣌⠻⣿⣿⠟⠛⣫⣩⠙⠛⢿⣿⡄⠹⠋⢁⡀⠉⠙⠻⣿⣿⣧⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣿⣿⣿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣼⣿⣿⠿⠋⠉⢀⡈⠙⠏⢀⣿⡿⠛⠋⢉⣹⠛⠻⣿⣿⠟⣵⣾⣵⠘⠁⠀⠀⠀
+#⠀⠀⠀⠀⠀⢻⣿⠁⠉⠈⠃⠀⠰⣌⣿⣷⠦⠄⠹⢷⡄⠀⠈⠙⢿⣶⣄⠈⠻⣿⣷⣄⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣿⣿⣿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣠⣾⣿⠟⠁⣠⣶⡿⠋⠁⠀⢠⣾⠟⠀⠴⣾⣿⣡⠎⠀⠈⠁⠈⠈⣿⡟⠀⠀⠀⠀⠀
+#⠀⠀⠀⠀⠀⠀⢻⣇⠀⠀⠀⠀⠀⠈⢿⡇⠀⠀⠀⠀⠙⠢⠀⡀⢸⣿⡿⠓⠀⠈⢻⣿⣿⣶⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣿⣿⣿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣶⣿⣿⡟⠁⠀⠐⢿⣿⡇⢀⠀⠠⠋⠀⠀⠀⠀⢸⡿⠁⠀⠀⠀⠀⠀⢰⡟⠁⠀⠀⠀⠀⠀
+#⠀⠀⠀⠀⠀⠀⠀⠙⠆⠀⠀⠀⠀⠀⠘⡇⠀⠀⠀⠀⠀⠀⢠⡁⣼⠏⠀⠀⠀⠀⠀⠹⣿⣿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣿⣿⣿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣿⣿⠏⠀⠀⠀⠀⠀⠹⣷⢈⡆⠀⠀⠀⠀⠀⠀⢸⠇⠀⠀⠀⠀⠀⠠⠋⠀⠀⠀⠀⠀⠀⠀
+#⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢠⠁⠀⠀⠀⠀⠀⠀⢸⣿⣿⠀⠀⠀⠀⠀⠀⠀⠹⣿⡆⠀⠀⠀⠀⠀⠀⠀⠀⠀⣸⣿⣿⣿⡆⠀⠀⠀⠀⠀⠀⠀⠀⠀⢠⣿⠏⠀⠀⠀⢀⠀⠀⠀⣿⣿⡇⠀⠀⠀⠀⠀⠀⠈⡆⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+#⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠂⠀⠀⠀⠀⠀⠀⠀⢸⣿⡇⠀⠀⠀⠈⢢⣀⠀⠀⢹⣷⠀⠀⠀⠀⠀⠀⠀⠀⢠⣿⣿⣿⣿⣿⡄⠀⠀⠀⠀⠀⠀⠀⠀⣾⡟⠀⠀⣀⡔⠁⠀⠀⠀⢸⣿⡇⠀⠀⠀⠀⠀⠀⠀⠘⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+#⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣿⡇⠀⠀⠀⠀⠀⠙⣷⣦⣄⣿⣧⠀⠀⠀⠀⠀⠀⠀⠙⢿⣿⣿⣿⡟⠋⠀⠀⠀⠀⠀⠀⠀⣼⣿⣠⣴⣾⠋⠀⠀⠀⠀⠀⢸⣿⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+#⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠹⣷⠀⠀⠀⠀⠀⠀⠈⠻⣿⣿⣿⣧⡀⠀⠀⠀⠀⠀⠀⠀⢻⣿⠏⠀⠀⠀⠀⠀⠀⠀⠀⣼⣿⣿⣿⠟⠁⠀⠀⠀⠀⠀⠀⣾⡏⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+#⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢻⡄⠀⠀⠀⠀⠀⠀⠀⠀⠙⢿⣿⣷⡀⠀⠀⠀⠀⠀⠀⠀⠟⠀⠀⠀⠀⠀⠀⠀⢀⣾⣿⡿⠋⠁⠀⠀⠀⠀⠀⠀⠀⢠⡟⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+#⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠱⡂⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠛⠿⣦⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣴⠿⠛⠉⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⠏⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+#⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠑⢄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠠⠋⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+# Messaggi di Frankie Proxy Core.
+# Supporta i codici colore legacy (&a, &l, ...) e i colori hex (&#RRGGBB).
+# %prefix% viene sostituito con il prefix della sezione a cui appartiene il messaggio.
+
+general:
+
+  prefix: "&#7B2FBE&lꜰʀᴀɴᴋɪᴇ &#3F3F46&l•"
+  credits: "%prefix% &#B6B6C2ᴛʜɪꜱ ᴘʟᴜɢɪɴ ɪꜱ ᴅᴇᴠᴇʟᴏᴘᴇᴅ ʙʏ &#C77DFF&lʟᴏʀᴇɴᴢᴢᴢᴢᴢ"
+  frankie_usage: "%prefix% &#B6B6C2ᴜꜱᴀ &#C77DFF/ꜰʀᴀɴᴋɪᴇ ʀᴇʟᴏᴀᴅ&#B6B6C2."
+  reload_success: "%prefix% &#B6B6C2ᴄᴏɴꜰɪɢ ᴇ ᴍᴇꜱꜱᴀɢɢɪ ʀɪᴄᴀʀɪᴄᴀᴛɪ ᴄᴏɴ &#4ADE80ꜱᴜᴄᴄᴇꜱꜱᴏ&#B6B6C2."
+  reload_failed: "%prefix% &#B6B6C2ʀɪᴄᴀʀɪᴄᴀᴍᴇɴᴛᴏ &#EF4444ꜰᴀʟʟɪᴛᴏ&#B6B6C2. ᴄᴏɴᴛʀᴏʟʟᴀ ʟᴀ ᴄᴏɴꜱᴏʟᴇ."
+
+staffchat:
+
+  # Messaggi generali.
+  prefix: "&#7B2FBE&lꜱᴛᴀꜰꜰ &#3F3F46&l•"
+  arguments: "%prefix% &#B6B6C2ᴜꜱᴀ &#C77DFF/ꜱᴄ <ᴍᴇꜱꜱᴀɢɢɪᴏ>&#B6B6C2."
+
+  # Messaggi talk della StaffChat. (NOTA: i client 1.19+ non lo supportano su Velocity)
+  staffchat_talk_enabled: "%prefix% &#B6B6C2ᴏʀᴀ ɪ ᴛᴜᴏɪ ᴍᴇꜱꜱᴀɢɢɪ ᴠᴇʀʀᴀɴɴᴏ ɪɴᴠɪᴀᴛɪ ɴᴇʟʟᴀ &#4ADE80ꜱᴛᴀꜰꜰᴄʜᴀᴛ&#B6B6C2."
+  staffchat_talk_disabled: "%prefix% &#B6B6C2ᴏʀᴀ ɪ ᴛᴜᴏɪ ᴍᴇꜱꜱᴀɢɢɪ ᴠᴇʀʀᴀɴɴᴏ ɪɴᴠɪᴀᴛɪ ɴᴇʟʟᴀ &#4ADE80ᴄʜᴀᴛ&#B6B6C2."
+
+  # Messaggi mute della StaffChat.
+  staffchat_muted: "%prefix% &#B6B6C2ʟᴀ ꜱᴛᴀꜰꜰᴄʜᴀᴛ è ꜱᴛᴀᴛᴀ &#4ADE80ꜱɪʟᴇɴᴢɪᴀᴛᴀ&#B6B6C2."
+  staffchat_unmuted: "%prefix% &#B6B6C2ʟᴀ ꜱᴛᴀꜰꜰᴄʜᴀᴛ è ꜱᴛᴀᴛᴀ &#4ADE80ʀɪᴀᴛᴛɪᴠᴀᴛᴀ&#B6B6C2."
+
+  # Messaggi toggle della StaffChat.
+  staffchat_toggled_on: "%prefix% &#B6B6C2ʟᴀ ꜱᴛᴀꜰꜰᴄʜᴀᴛ è ᴏʀᴀ &#4ADE80ᴠɪꜱɪʙɪʟᴇ&#B6B6C2."
+  staffchat_toggled_off: "%prefix% &#B6B6C2ʟᴀ ꜱᴛᴀꜰꜰᴄʜᴀᴛ è ᴏʀᴀ &#4ADE80ɪɴᴠɪꜱɪʙɪʟᴇ&#B6B6C2."
+
+  # Formati della chat.
+  staffchat_format: "%prefix% &#B6B6C2%userprefix%%user% &#3F3F46» &e%message%"
+  staffchat_console_format: "%prefix% &#B6B6C2%user% &#3F3F46» &#B6B6C2%message%"
+
+  staff_join_message_format: "%prefix% &#C77DFF%userprefix%%user% &#B6B6C2è entrato nel Network"
+  staff_quit_message_format: "%prefix% &#C77DFF%userprefix%%user% &#B6B6C2è uscito dal Network"
+
+  staff_switch_message_format: "%prefix% &#B6B6C2%userprefix%%user% &#3F3F46(&#C77DFF%serverbefore% &#FACC15➜ &#C77DFF%server%&#3F3F46)"
+
+report:
+
+  prefix: "&#EF4444&lʀᴇᴘᴏʀᴛ &#3F3F46&l•"
+  usage: "%prefix% &#B6B6C2ᴜꜱᴀ &#C77DFF/ʀᴇᴘᴏʀᴛ <ɢɪᴏᴄᴀᴛᴏʀᴇ> <ᴍᴏᴛɪᴠᴏ>&#B6B6C2."
+  player_not_found: "%prefix% &#B6B6C2ɢɪᴏᴄᴀᴛᴏʀᴇ &#EF4444ɴᴏɴ ᴛʀᴏᴠᴀᴛᴏ&#B6B6C2."
+  self_report: "%prefix% &#B6B6C2ɴᴏɴ ᴘᴜᴏɪ ʀᴇᴘᴏʀᴛᴀʀᴇ ᴛᴇ ꜱᴛᴇꜱꜱᴏ&#B6B6C2."
+  cooldown: "%prefix% &#B6B6C2ᴀᴛᴛᴇɴᴅɪ &#FACC15%time%ꜱ &#B6B6C2ᴘʀɪᴍᴀ ᴅɪ ɪɴᴠɪᴀʀᴇ ᴜɴ ᴀʟᴛʀᴏ ʀᴇᴘᴏʀᴛ&#B6B6C2."
+  sent: "%prefix% &#B6B6C2ʀᴇᴘᴏʀᴛ ᴄᴏɴᴛʀᴏ &#C77DFF%target% &#B6B6C2ɪɴᴠɪᴀᴛᴏ ᴄᴏɴ &#4ADE80ꜱᴜᴄᴄᴇꜱꜱᴏ&#B6B6C2."
+
+  # Notifica inviata allo staff (permesso: frankie.report.receive).
+  staff_format: "%prefix% &#C77DFF%user% &#B6B6C2ʜᴀ ʀᴇᴘᴏʀᴛᴀᴛᴏ &#EF4444%target% &#3F3F46(&#C77DFF%server%&#3F3F46) &#3F3F46» &e%reason%"
+
+request:
+
+  prefix: "&#38BDF8&lʀᴇǫᴜᴇꜱᴛ &#3F3F46&l•"
+  usage: "%prefix% &#B6B6C2ᴜꜱᴀ &#C77DFF/ʀᴇǫᴜᴇꜱᴛ <ᴍᴏᴛɪᴠᴏ>&#B6B6C2."
+  cooldown: "%prefix% &#B6B6C2ᴀᴛᴛᴇɴᴅɪ &#FACC15%time%ꜱ &#B6B6C2ᴘʀɪᴍᴀ ᴅɪ ɪɴᴠɪᴀʀᴇ ᴜɴ'ᴀʟᴛʀᴀ ʀɪᴄʜɪᴇꜱᴛᴀ&#B6B6C2."
+  sent: "%prefix% &#B6B6C2ʀɪᴄʜɪᴇꜱᴛᴀ ɪɴᴠɪᴀᴛᴀ ᴀʟʟᴏ &#38BDF8ꜱᴛᴀꜰꜰ&#B6B6C2. ᴜɴ ᴍᴇᴍʙʀᴏ ᴅᴇʟʟᴏ ꜱᴛᴀꜰꜰ ᴛɪ ᴀɪᴜᴛᴇʀà ᴀ ʙʀᴇᴠᴇ."
+
+  # Notifica inviata allo staff (permesso: frankie.request.receive).
+  staff_format: "%prefix% &#C77DFF%user% &#3F3F46(&#38BDF8%server%&#3F3F46) &#B6B6C2ʀɪᴄʜɪᴇᴅᴇ ᴀɪᴜᴛᴏ &#3F3F46» &e%reason%"
+
+teleport:
+
+  prefix: "&#FACC15&lᴛᴘ &#3F3F46&l•"
+  tpto_usage: "%prefix% &#B6B6C2ᴜꜱᴀ &#C77DFF/ᴛᴘᴛᴏ <ɢɪᴏᴄᴀᴛᴏʀᴇ>&#B6B6C2."
+  goto_usage: "%prefix% &#B6B6C2ᴜꜱᴀ &#C77DFF/ɢᴏᴛᴏ <ꜱᴇʀᴠᴇʀ>&#B6B6C2."
+  self: "%prefix% &#B6B6C2ɴᴏɴ ᴘᴜᴏɪ ᴛᴇʟᴇᴛʀᴀꜱᴘᴏʀᴛᴀʀᴛɪ ᴅᴀ ᴛᴇ ꜱᴛᴇꜱꜱᴏ&#B6B6C2."
+  player_not_found: "%prefix% &#B6B6C2ɢɪᴏᴄᴀᴛᴏʀᴇ &#C77DFF%target% &#EF4444ɴᴏɴ ᴛʀᴏᴠᴀᴛᴏ&#B6B6C2."
+  server_not_found: "%prefix% &#B6B6C2ꜱᴇʀᴠᴇʀ &#C77DFF%server% &#EF4444ɴᴏɴ ᴛʀᴏᴠᴀᴛᴏ&#B6B6C2."
+  same_server: "%prefix% &#B6B6C2ꜱᴇɪ ɢɪà ᴄᴏɴɴᴇꜱꜱᴏ ᴀ &#C77DFF%server%&#B6B6C2."
+  tpto_success: "%prefix% &#B6B6C2ᴛᴇʟᴇᴛʀᴀꜱᴘᴏʀᴛᴀᴛᴏ ᴅᴀ &#C77DFF%target% &#3F3F46(&#C77DFF%server%&#3F3F46)&#B6B6C2."
+  goto_success: "%prefix% &#B6B6C2ᴄᴏɴɴᴇꜱꜱᴏ ᴀ &#4ADE80%server%&#B6B6C2."
+  failed: "%prefix% &#B6B6C2ᴄᴏɴɴᴇꜱꜱɪᴏɴᴇ ᴀ &#C77DFF%server% &#EF4444ꜰᴀʟʟɪᴛᴀ&#B6B6C2."
+
+friend:
+
+  prefix: "&#4ADE80&lꜰʀɪᴇɴᴅ &#3F3F46&l•"
+
+  help:
+    - "%prefix% &#B6B6C2ᴄᴏᴍᴀɴᴅɪ ᴅɪꜱᴘᴏɴɪʙɪʟɪ:"
+    - " &#3F3F46• &#C77DFF/ꜰʀɪᴇɴᴅ ᴀᴅᴅ <ɢɪᴏᴄᴀᴛᴏʀᴇ> &#3F3F46- &#B6B6C2ɪɴᴠɪᴀ ᴜɴᴀ ʀɪᴄʜɪᴇꜱᴛᴀ ᴅɪ ᴀᴍɪᴄɪᴢɪᴀ"
+    - " &#3F3F46• &#C77DFF/ꜰʀɪᴇɴᴅ ᴀᴄᴄᴇᴘᴛ <ɢɪᴏᴄᴀᴛᴏʀᴇ> &#3F3F46- &#B6B6C2ᴀᴄᴄᴇᴛᴛᴀ ᴜɴᴀ ʀɪᴄʜɪᴇꜱᴛᴀ"
+    - " &#3F3F46• &#C77DFF/ꜰʀɪᴇɴᴅ ᴅᴇɴʏ <ɢɪᴏᴄᴀᴛᴏʀᴇ> &#3F3F46- &#B6B6C2ʀɪꜰɪᴜᴛᴀ ᴜɴᴀ ʀɪᴄʜɪᴇꜱᴛᴀ"
+    - " &#3F3F46• &#C77DFF/ꜰʀɪᴇɴᴅ ʀᴇᴍᴏᴠᴇ <ɢɪᴏᴄᴀᴛᴏʀᴇ> &#3F3F46- &#B6B6C2ʀɪᴍᴜᴏᴠɪ ᴜɴ ᴀᴍɪᴄᴏ"
+    - " &#3F3F46• &#C77DFF/ꜰʀɪᴇɴᴅ ʟɪꜱᴛ &#3F3F46- &#B6B6C2ʟɪꜱᴛᴀ ᴅᴇɪ ᴛᴜᴏɪ ᴀᴍɪᴄɪ"
+    - " &#3F3F46• &#C77DFF/ꜰʀɪᴇɴᴅ ʀᴇǫᴜᴇꜱᴛꜱ &#3F3F46- &#B6B6C2ʀɪᴄʜɪᴇꜱᴛᴇ ɪɴ ꜱᴏꜱᴘᴇꜱᴏ"
+
+  self: "%prefix% &#B6B6C2ɴᴏɴ ᴘᴜᴏɪ ᴀɢɢɪᴜɴɢᴇʀᴇ ᴛᴇ ꜱᴛᴇꜱꜱᴏ&#B6B6C2."
+  player_not_found: "%prefix% &#B6B6C2ɢɪᴏᴄᴀᴛᴏʀᴇ &#C77DFF%target% &#EF4444ɴᴏɴ ᴛʀᴏᴠᴀᴛᴏ&#B6B6C2."
+  already_friends: "%prefix% &#B6B6C2ꜱᴇɪ ɢɪà ᴀᴍɪᴄᴏ ᴅɪ &#C77DFF%target%&#B6B6C2."
+  already_requested: "%prefix% &#B6B6C2ʜᴀɪ ɢɪà ɪɴᴠɪᴀᴛᴏ ᴜɴᴀ ʀɪᴄʜɪᴇꜱᴛᴀ ᴀ &#C77DFF%target%&#B6B6C2."
+  limit_reached: "%prefix% &#B6B6C2ʜᴀɪ ʀᴀɢɢɪᴜɴᴛᴏ ɪʟ ʟɪᴍɪᴛᴇ ᴅɪ &#FACC15%limit% &#B6B6C2ᴀᴍɪᴄɪ."
+
+  request_sent: "%prefix% &#B6B6C2ʀɪᴄʜɪᴇꜱᴛᴀ ᴅɪ ᴀᴍɪᴄɪᴢɪᴀ ɪɴᴠɪᴀᴛᴀ ᴀ &#C77DFF%target%&#B6B6C2."
+  request_received: "%prefix% &#C77DFF%user% &#B6B6C2ᴛɪ ʜᴀ ɪɴᴠɪᴀᴛᴏ ᴜɴᴀ ʀɪᴄʜɪᴇꜱᴛᴀ ᴅɪ ᴀᴍɪᴄɪᴢɪᴀ. ᴜꜱᴀ &#4ADE80/ꜰʀɪᴇɴᴅ ᴀᴄᴄᴇᴘᴛ %user%"
+  request_accepted: "%prefix% &#B6B6C2ᴏʀᴀ ꜱᴇɪ ᴀᴍɪᴄᴏ ᴅɪ &#4ADE80%target%&#B6B6C2!"
+  request_accepted_other: "%prefix% &#C77DFF%user% &#B6B6C2ʜᴀ ᴀᴄᴄᴇᴛᴛᴀᴛᴏ ʟᴀ ᴛᴜᴀ ʀɪᴄʜɪᴇꜱᴛᴀ ᴅɪ ᴀᴍɪᴄɪᴢɪᴀ."
+  request_denied: "%prefix% &#B6B6C2ʀɪᴄʜɪᴇꜱᴛᴀ ᴅɪ &#C77DFF%target% &#EF4444ʀɪꜰɪᴜᴛᴀᴛᴀ&#B6B6C2."
+  no_request: "%prefix% &#B6B6C2ɴᴇꜱꜱᴜɴᴀ ʀɪᴄʜɪᴇꜱᴛᴀ ᴅᴀ &#C77DFF%target%&#B6B6C2."
+
+  removed: "%prefix% &#C77DFF%target% &#B6B6C2ʀɪᴍᴏꜱꜱᴏ ᴅᴀɪ ᴛᴜᴏɪ ᴀᴍɪᴄɪ."
+  removed_by: "%prefix% &#C77DFF%user% &#B6B6C2ᴛɪ ʜᴀ ʀɪᴍᴏꜱꜱᴏ ᴅᴀɪ ꜱᴜᴏɪ ᴀᴍɪᴄɪ."
+  not_friends: "%prefix% &#B6B6C2ɴᴏɴ ꜱᴇɪ ᴀᴍɪᴄᴏ ᴅɪ &#C77DFF%target%&#B6B6C2."
+
+  list_empty: "%prefix% &#B6B6C2ɴᴏɴ ʜᴀɪ ᴀɴᴄᴏʀᴀ ᴀᴍɪᴄɪ. ᴜꜱᴀ &#4ADE80/ꜰʀɪᴇɴᴅ ᴀᴅᴅ <ɢɪᴏᴄᴀᴛᴏʀᴇ>"
+  list_header: "%prefix% &#B6B6C2ᴀᴍɪᴄɪ &#3F3F46(&#4ADE80%count%&#3F3F46)&#B6B6C2:"
+  list_entry: " &#3F3F46• &#C77DFF%user% "
+  status_online: "&#3F3F46[&#4ADE80ᴏɴʟɪɴᴇ&#3F3F46]"
+  status_offline: "&#3F3F46[&#EF4444ᴏꜰꜰʟɪɴᴇ&#3F3F46]"
+
+  requests_empty: "%prefix% &#B6B6C2ɴᴇꜱꜱᴜɴᴀ ʀɪᴄʜɪᴇꜱᴛᴀ ɪɴ ꜱᴏꜱᴘᴇꜱᴏ."
+  requests_header: "%prefix% &#B6B6C2ʀɪᴄʜɪᴇꜱᴛᴇ &#3F3F46(&#FACC15%count%&#3F3F46)&#B6B6C2:"
+  requests_entry: " &#3F3F46• &#C77DFF%user% &#3F3F46- &#4ADE80/ꜰʀɪᴇɴᴅ ᴀᴄᴄᴇᴘᴛ %user%"
+
+  # Notifiche quando un amico entra o esce dal Network.
+  friend_online: "%prefix% &#C77DFF%user% &#B6B6C2è ᴏʀᴀ &#4ADE80ᴏɴʟɪɴᴇ&#B6B6C2."
+  friend_offline: "%prefix% &#C77DFF%user% &#B6B6C2è ᴏʀᴀ &#EF4444ᴏꜰꜰʟɪɴᴇ&#B6B6C2."
