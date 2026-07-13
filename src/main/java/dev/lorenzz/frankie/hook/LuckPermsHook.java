@@ -16,8 +16,10 @@ import org.slf4j.Logger;
 public class LuckPermsHook {
 
     private final boolean available;
+    private final ProxyServer proxy;
 
     public LuckPermsHook(ProxyServer proxy, Logger logger) {
+        this.proxy = proxy;
         this.available = proxy.getPluginManager().getPlugin("luckperms").isPresent();
         if (available) {
             logger.info("LuckPerms found: %userprefix% and %usersuffix% are enabled.");
@@ -37,6 +39,21 @@ public class LuckPermsHook {
     /** Prefix + name + suffix, ready for %displayname%. */
     public String displayName(Player player) {
         return prefix(player) + player.getUsername() + suffix(player);
+    }
+
+    /**
+     * Get suffix for a player by name. Returns empty string if player not online
+     * or LuckPerms not available.
+     */
+    public String getSuffixForName(String name) {
+        if (!available) {
+            return "";
+        }
+        Player player = proxy.getPlayer(name).orElse(null);
+        if (player == null) {
+            return "";
+        }
+        return suffix(player);
     }
 
     private String meta(Player player, boolean prefix) {

@@ -149,3 +149,10 @@ friend:
   # Notifiche quando un amico entra o esce dal Network.
   friend_online: "%prefix% &#C77DFF%user% &#B6B6C2è ᴏʀᴀ &#4ADE80ᴏɴʟɪɴᴇ&#B6B6C2."
   friend_offline: "%prefix% &#C77DFF%user% &#B6B6C2è ᴏʀᴀ &#EF4444ᴏꜰꜰʟɪɴᴇ&#B6B6C2."
+
+blacklist:
+  usage: '&8‹&4⚠&8›&f &7Utilizzo: &f/blacklist (-p -s) <giocatore>'
+  example: '&8‹&4⚠&8›&f &7Esempio /blacklist Banana123 -p Affari Illegali'
+  silent_prefix: '&9[S] &r'
+  broadcast: '&f$playerSuffix$playerDisplayName &aè stato blacklistato &fda &f$executorSuffix$executor {hoverText: &7&m---------------\\n&7Motivo: &c$reason \\n&7Durata: &c$duration \\n&7Da: $serverOrigin \\n&7Ipban: &aSi \\n&7&m---------------}'
+  response: '&8‹&4⚠&8›&f &aHai eseguito il blacklist con successo &r$playerSuffix$playerDisplayName &aper &r$reason &aper la durata di $duration &aID: $id'

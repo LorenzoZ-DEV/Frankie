@@ -88,6 +88,19 @@ public class Database {
                         server VARCHAR(64) NOT NULL,
                         created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
                     )""");
+            statement.executeUpdate("""
+                    CREATE TABLE IF NOT EXISTS frankie_blacklist (
+                        id INT AUTO_INCREMENT PRIMARY KEY,
+                        issuer_uuid CHAR(36) NOT NULL,
+                        issuer_name VARCHAR(16) NOT NULL,
+                        victim_uuid CHAR(36) NOT NULL,
+                        victim_name VARCHAR(16) NOT NULL,
+                        ip VARCHAR(45) NOT NULL,
+                        luckperms_suffix VARCHAR(64) DEFAULT '',
+                        reason TEXT NOT NULL,
+                        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                        INDEX idx_blacklist_victim (victim_uuid)
+                    )""");
         }
     }
 

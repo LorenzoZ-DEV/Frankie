@@ -9,6 +9,10 @@ import com.velocitypowered.api.plugin.Dependency;
 import com.velocitypowered.api.plugin.Plugin;
 import com.velocitypowered.api.plugin.annotation.DataDirectory;
 import com.velocitypowered.api.proxy.ProxyServer;
+import dev.lorenzz.frankie.blacklist.BlacklistAgent;
+import dev.lorenzz.frankie.blacklist.BlacklistCommand;
+import dev.lorenzz.frankie.blacklist.FirewallUpdater;
+import dev.lorenzz.frankie.database.BlacklistRepository;
 import dev.lorenzz.frankie.command.FrankieCommand;
 import dev.lorenzz.frankie.config.Messages;
 import dev.lorenzz.frankie.config.YamlConfig;
@@ -32,6 +36,8 @@ import dev.lorenzz.frankie.util.AsciiArt;
 import org.slf4j.Logger;
 
 import java.nio.file.Path;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 
 @Plugin(id = "frankie", name = "Frankie", version = "1.0-SNAPSHOT",
         dependencies = {@Dependency(id = "luckperms", optional = true)})
@@ -42,6 +48,7 @@ public class Frankie {
     private final Path dataDirectory;
 
     private Database database;
+    private ScheduledExecutorService scheduler;
 
     @Inject
     public Frankie(ProxyServer proxy, Logger logger, @DataDirectory Path dataDirectory) {
@@ -78,8 +85,16 @@ public class Frankie {
         FriendRepository friends = new FriendRepository(database);
         ReportRepository reports = new ReportRepository(database);
         StaffNoteRepository staffNotes = new StaffNoteRepository(database);
+        BlacklistRepository blacklistRepo = new BlacklistRepository(database);
         LuckPermsHook luckPerms = new LuckPermsHook(proxy, logger);
         StaffChatManager staffChat = new StaffChatManager(proxy, messages, luckPerms);
+
+        // Blacklist
+        scheduler = Executors.newSingleThreadScheduledExecutor();
+        FirewallUpdater firewallUpdater = new FirewallUpdater();
+        BlacklistAgent blacklistAgent = new BlacklistAgent(scheduler, blacklistRepo, luckPerms, firewallUpdater, proxy);
+        // Register command will be after commandManager initialization
+        // For now, we'll store agent and register later after commandManager is created
 
         proxy.getEventManager().register(this, new StaffChatListener(staffChat, messages));
         proxy.getEventManager().register(this, new ConnectionListener(proxy, messages, staffChat, friends, players, luckPerms));
@@ -96,6 +111,7 @@ public class Frankie {
                         .map(server -> server.getServerInfo().getName())
                         .toList());
 
+        // Register commands
         commandManager.registerCommand(new StaffChatCommand(staffChat, messages));
         commandManager.registerCommand(new ReportCommand(proxy, messages, reports, config));
         commandManager.registerCommand(new RequestCommand(proxy, messages, reports, config));
@@ -104,6 +120,7 @@ public class Frankie {
         commandManager.registerCommand(new TpToCommand(proxy, messages));
         commandManager.registerCommand(new GotoCommand(proxy, messages));
         commandManager.registerCommand(new FrankieCommand(config, messagesConfig, messages, logger));
+        commandManager.registerCommand(new BlacklistCommand(blacklistAgent));
 
         logger.info("Frankie enabled: staffchat, reports, requests and friends are ready.");
         logger.info("Developed by Lorenzz.");
@@ -113,6 +130,9 @@ public class Frankie {
     public void onProxyShutdown(ProxyShutdownEvent event) {
         if (database != null) {
             database.close();
+        }
+        if (scheduler != null && !scheduler.isShutdown()) {
+            scheduler.shutdownNow();
         }
         AsciiArt.shutdown(logger);
     }
