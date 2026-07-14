@@ -12,6 +12,7 @@ import com.velocitypowered.api.proxy.ProxyServer;
 import dev.lorenzz.frankie.blacklist.BlacklistAgent;
 import dev.lorenzz.frankie.blacklist.BlacklistCommand;
 import dev.lorenzz.frankie.blacklist.FirewallUpdater;
+import dev.lorenzz.frankie.blacklist.UnblacklistCommand;
 import dev.lorenzz.frankie.database.BlacklistRepository;
 import dev.lorenzz.frankie.command.FrankieCommand;
 import dev.lorenzz.frankie.config.Messages;
@@ -23,6 +24,7 @@ import dev.lorenzz.frankie.database.ReportRepository;
 import dev.lorenzz.frankie.database.StaffNoteRepository;
 import dev.lorenzz.frankie.friend.FriendCommand;
 import dev.lorenzz.frankie.hook.LuckPermsHook;
+import dev.lorenzz.frankie.listener.BlacklistListener;
 import dev.lorenzz.frankie.listener.ConnectionListener;
 import dev.lorenzz.frankie.report.ReportCommand;
 import dev.lorenzz.frankie.request.RequestCommand;
@@ -92,12 +94,14 @@ public class Frankie {
         // Blacklist
         scheduler = Executors.newSingleThreadScheduledExecutor();
         FirewallUpdater firewallUpdater = new FirewallUpdater();
-        BlacklistAgent blacklistAgent = new BlacklistAgent(scheduler, blacklistRepo, luckPerms, firewallUpdater, proxy);
+        BlacklistListener blacklistListener = new BlacklistListener(blacklistRepo, messages);
+        BlacklistAgent blacklistAgent = new BlacklistAgent(scheduler, blacklistRepo, luckPerms, firewallUpdater, proxy, blacklistListener);
         // Register command will be after commandManager initialization
         // For now, we'll store agent and register later after commandManager is created
 
         proxy.getEventManager().register(this, new StaffChatListener(staffChat, messages));
         proxy.getEventManager().register(this, new ConnectionListener(proxy, messages, staffChat, friends, players, luckPerms));
+        proxy.getEventManager().register(this, blacklistListener);
 
         proxy.getChannelRegistrar().register(TpToCommand.CHANNEL);
 
@@ -121,6 +125,7 @@ public class Frankie {
         commandManager.registerCommand(new GotoCommand(proxy, messages));
         commandManager.registerCommand(new FrankieCommand(config, messagesConfig, messages, logger));
         commandManager.registerCommand(new BlacklistCommand(blacklistAgent));
+        commandManager.registerCommand(new UnblacklistCommand(blacklistAgent));
 
         logger.info("Frankie enabled: staffchat, reports, requests and friends are ready.");
         logger.info("Developed by Lorenzz.");

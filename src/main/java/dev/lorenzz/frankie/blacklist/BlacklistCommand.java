@@ -52,10 +52,11 @@ public class BlacklistCommand extends BaseCommand {
             return;
         }
 
-        // Resolve victim player (must be online)
+        // Resolve victim player (attempt to get online, but we'll check later if we need them for IP)
         Player victim = agent.getProxy().getPlayer(victimName).orElse(null);
         if (victim == null) {
-            player.sendMessage(Text.colorize("&8‹&4⚠&8›&cGiocatore non online: &f" + victimName));
+            // Player is offline - we need them online to get their IP for firewall blocking
+            player.sendMessage(Text.colorize("&8‹&4⚠&8›&cIl giocatore &f" + victimName + " &c deve essere online per ottenere il loro indirizzo IP necessario per il blocco firewall."));
             return;
         }
         final String reason = reasonBuilder.toString();
@@ -86,12 +87,7 @@ public class BlacklistCommand extends BaseCommand {
             String tempDuration = "1m";
 
             // Build hover text for broadcast
-            String hoverText = "&7&m---------------\n" +
-                               "&7Motivo: &c" + reason + "\n" +
-                               "&7Durata: &c" + tempDuration + "\n" +
-                               "&7Da: " + serverOrigin + "\n" +
-                               "&7Ipban: &aSi\n" +
-                               "&7&m---------------";
+            String hoverText = "&7[&eℹ&7] &fMotivo: &c" + reason + " &7| &fDurata: &c" + tempDuration + " &7| &fDa: &c" + serverOrigin + " &7| &fFirewall: &aAttivo &7[&eℹ&7]";
 
             // Build response message for issuer
             String responseMsg = "&8‹&4⚠&8›&f &aHai eseguito il blacklist con successo &r" +
