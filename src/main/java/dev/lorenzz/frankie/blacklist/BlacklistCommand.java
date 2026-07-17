@@ -2,109 +2,133 @@ package dev.lorenzz.frankie.blacklist;
 
 import co.aikar.commands.BaseCommand;
 import co.aikar.commands.annotation.CommandAlias;
+import co.aikar.commands.annotation.CommandCompletion;
 import co.aikar.commands.annotation.CommandPermission;
+import co.aikar.commands.CommandIssuer;
+import com.velocitypowered.api.command.CommandSource;
 import com.velocitypowered.api.proxy.Player;
-import dev.lorenzz.frankie.blacklist.BlacklistAgent;
+import dev.lorenzz.frankie.config.Messages;
 import dev.lorenzz.frankie.util.Text;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.event.HoverEvent;
 
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.regex.Pattern;
 
 public class BlacklistCommand extends BaseCommand {
     private final BlacklistAgent agent;
+    private final Messages messages;
 
-    public BlacklistCommand(BlacklistAgent agent) {
+    private static final Pattern IP_PATTERN =
+            Pattern.compile("^\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}$");
+
+    private static final UUID CONSOLE_UUID = UUID.nameUUIDFromBytes("Console".getBytes());
+
+    public BlacklistCommand(BlacklistAgent agent, Messages messages) {
         this.agent = agent;
+        this.messages = messages;
     }
 
-    @CommandAlias("blacklist|bl|blist")
+    @CommandAlias("blacklist|bl|blist|spermaban")
     @CommandPermission("frankie.admin")
-    public void onBlacklistCommand(Player player, String... args) {
-        String victimName = null;
+    @CommandCompletion("@players")
+    public void onBlacklistCommand(CommandIssuer issuer, String... args) {
+        CommandSource source = (CommandSource) issuer.getIssuer();
+
+        String target = null;
         boolean silent = false;
         StringBuilder reasonBuilder = new StringBuilder();
-        int i = 0;
-        while (i < args.length) {
-            String arg = args[i];
+
+        for (String arg : args) {
             if (arg.equalsIgnoreCase("-s")) {
                 silent = true;
-                i++;
-            } else if (arg.equalsIgnoreCase("-p")) {
-                // collect remaining tokens as reason
-                i++;
-                while (i < args.length) {
-                    if (reasonBuilder.length() > 0) {
-                        reasonBuilder.append(' ');
-                    }
-                    reasonBuilder.append(args[i]);
-                    i++;
-                }
-                break; // reason consumes rest
-            } else if (victimName == null) {
-                victimName = arg;
-                i++;
+            } else if (target == null) {
+                target = arg;
             } else {
-                // unexpected extra token; treat as part of reason if no -p given? ignore for simplicity
-                i++;
+                if (reasonBuilder.length() > 0) reasonBuilder.append(' ');
+                reasonBuilder.append(arg);
             }
         }
-        if (victimName == null) {
-            player.sendMessage(Text.colorize("&8‹&4⚠&8›&f &7Utilizzo: &f/blacklist (-p -s) <giocatore>"));
+
+        if (target == null) {
+            source.sendMessage(Text.colorize("&8‹&4⚠&8›&f &7Utilizzo: &f/blacklist (-s) <giocatore|ip> <motivo>"));
             return;
         }
 
-        // Resolve victim player (attempt to get online, but we'll check later if we need them for IP)
-        Player victim = agent.getProxy().getPlayer(victimName).orElse(null);
-        if (victim == null) {
-            // Player is offline - we need them online to get their IP for firewall blocking
-            player.sendMessage(Text.colorize("&8‹&4⚠&8›&cIl giocatore &f" + victimName + " &c deve essere online per ottenere il loro indirizzo IP necessario per il blocco firewall."));
+        String reason = reasonBuilder.toString();
+        if (reason.isEmpty()) {
+            source.sendMessage(Text.colorize("&8‹&4⚠&8›&f &7Utilizzo: &f/blacklist (-s) <giocatore|ip> <motivo>"));
             return;
         }
-        final String reason = reasonBuilder.toString();
-        final boolean isSilent = silent;
 
-        // Call blacklist and handle future
-        CompletableFuture<Long> future = agent.blacklist(player, victim, reason);
+        Player playerIssuer = issuer.getIssuer() instanceof Player p ? p : null;
+        UUID issuerUuid = playerIssuer != null ? playerIssuer.getUniqueId() : CONSOLE_UUID;
+        String issuerName = playerIssuer != null ? playerIssuer.getUsername() : "Console";
+
+        final String finalTarget = target;
+        final boolean finalSilent = silent;
+        boolean isIp = IP_PATTERN.matcher(finalTarget).matches();
+
+        CompletableFuture<Long> future;
+        if (isIp) {
+            future = agent.blacklistByIp(issuerUuid, issuerName, finalTarget, reason);
+        } else {
+            future = agent.blacklistByName(issuerUuid, issuerName, finalTarget, reason);
+        }
         future.whenComplete((generatedId, throwable) -> {
             if (throwable != null) {
-                player.sendMessage(Text.colorize("&8‹&4⚠&8›&cErrore durante il blacklist: &f" + throwable.getMessage()));
+                String errMsg = throwable.getMessage();
+                if (throwable instanceof java.util.concurrent.CompletionException
+                        && throwable.getCause() != null) {
+                    errMsg = throwable.getCause().getMessage();
+                }
+                source.sendMessage(Text.colorize("&8‹&4⚠&8›&cErrore: &f" + errMsg));
                 return;
             }
-            long id = generatedId;
 
-            // Gather data for messages
-            String issuerName = player.getUsername();
-            String issuerSuffix = agent.getLuckPermsHook().suffix(player);
-            String victimNameActual = victim.getUsername();
-            String victimSuffix = agent.getLuckPermsHook().suffix(victim);
-            String ip = victim.getRemoteAddress().getAddress().getHostAddress();
+            String issuerSuffix = playerIssuer != null ? agent.getLuckPermsHook().suffix(playerIssuer) : "";
+            String serverOrigin = playerIssuer != null
+                    ? playerIssuer.getCurrentServer().map(c -> c.getServerInfo().getName()).orElse("unknown")
+                    : "console";
 
-            // Server origin: server where the issuer is currently on
-            String serverOrigin = player.getCurrentServer()
-                    .map(conn -> conn.getServerInfo().getName())
-                    .orElse("unknown");
-
-            // Duration: since IP ban happens after 1 minute, we show "1m"
-            String tempDuration = "1m";
-
-            // Build hover text for broadcast
-            String hoverText = "&7[&eℹ&7] &fMotivo: &c" + reason + " &7| &fDurata: &c" + tempDuration + " &7| &fDa: &c" + serverOrigin + " &7| &fFirewall: &aAttivo &7[&eℹ&7]";
-
-            // Build response message for issuer
-            String responseMsg = "&8‹&4⚠&8›&f &aHai eseguito il blacklist con successo &r" +
-                    victimSuffix + victimNameActual + " &aper &r" + reason +
-                    "&aper la durata di " + tempDuration + " &aID: " + id;
-            if (isSilent) {
-                responseMsg = "&9[S] &r" + responseMsg;
+            String responseMsg = messages.raw("blacklist.response",
+                    "$playerSuffix", "",
+                    "$playerDisplayName", finalTarget,
+                    "$reason", reason,
+                    "$id", String.valueOf(generatedId));
+            if (finalSilent) {
+                responseMsg = messages.raw("blacklist.silent_prefix") + responseMsg;
             }
-            player.sendMessage(Text.colorize(responseMsg));
+            source.sendMessage(Text.colorize(responseMsg));
 
-            // If not silent, broadcast to all players
-            if (!isSilent) {
-                String broadcastMsg = "&f" + victimSuffix + victimNameActual +
-                        " &aè stato bannato &fIP ban &fda &f" +
-                        issuerSuffix + issuerName + " {hoverText: " + hoverText + "}";
-                // Send to all players
-                agent.getProxy().getAllPlayers().forEach(p -> p.sendMessage(Text.colorize(broadcastMsg)));
+            if (!finalSilent) {
+                String rawBroadcast = messages.raw("blacklist.broadcast",
+                        "$playerSuffix", "",
+                        "$playerDisplayName", finalTarget,
+                        "$reason", reason,
+                        "$serverOrigin", serverOrigin);
+                String[] parts = rawBroadcast.split("\\$executorSuffix\\$executor", 2);
+
+                Component broadcastComponent = Component.empty();
+
+                // 1. Aggiungiamo la parte prima del nome
+                if (parts.length > 0 && !parts[0].isEmpty()) {
+                    broadcastComponent = broadcastComponent.append(Text.colorize(parts[0]));
+                }
+
+                Component executorComponent = Text.colorize(issuerSuffix + issuerName);
+
+                if (parts.length > 1 && !parts[1].isEmpty()) {
+                    Component hoverText = Text.colorize(parts[1]);
+                    executorComponent = executorComponent.hoverEvent(HoverEvent.showText(hoverText));
+                }
+
+                broadcastComponent = broadcastComponent.append(executorComponent);
+
+                // 5. Inviamo a tutti i giocatori online
+                final Component finalBroadcast = broadcastComponent;
+                agent.getProxy().getAllPlayers().forEach(p -> p.sendMessage(finalBroadcast));
             }
         });
     }

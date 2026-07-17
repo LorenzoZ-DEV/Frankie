@@ -70,6 +70,43 @@ public class BlacklistRepository {
         });
     }
 
+    /** True if any blacklist record exists for the given IP. */
+    public CompletableFuture<Boolean> isIpBlacklisted(String ip) {
+        return CompletableFuture.supplyAsync(() -> {
+            try (Connection connection = database.getConnection();
+                 PreparedStatement statement = connection.prepareStatement(
+                         "SELECT 1 FROM frankie_blacklist WHERE ip = ? LIMIT 1")) {
+                statement.setString(1, ip);
+                try (ResultSet result = statement.executeQuery()) {
+                    return result.next();
+                }
+            } catch (SQLException e) {
+                throw new RuntimeException(e);
+            }
+        });
+    }
+
+    /** All distinct non-empty IPs currently blacklisted. */
+    public CompletableFuture<java.util.Set<String>> allBlacklistedIps() {
+        return CompletableFuture.supplyAsync(() -> {
+            java.util.Set<String> ips = new java.util.HashSet<>();
+            try (Connection connection = database.getConnection();
+                 PreparedStatement statement = connection.prepareStatement(
+                         "SELECT DISTINCT ip FROM frankie_blacklist");
+                 ResultSet result = statement.executeQuery()) {
+                while (result.next()) {
+                    String ip = result.getString("ip");
+                    if (ip != null && !ip.isBlank()) {
+                        ips.add(ip);
+                    }
+                }
+            } catch (SQLException e) {
+                throw new RuntimeException(e);
+            }
+            return ips;
+        });
+    }
+
     /**
      * Returns the IP address of the most recent blacklist entry for the given victim,
      * or empty if none.

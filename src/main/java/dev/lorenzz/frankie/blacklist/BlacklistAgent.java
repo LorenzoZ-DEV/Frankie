@@ -1,99 +1,166 @@
 package dev.lorenzz.frankie.blacklist;
 
+import com.nickuc.login.api.nLoginAPI;
+import com.nickuc.login.api.types.AccountData;
+import com.nickuc.login.api.types.Identity;
 import com.velocitypowered.api.proxy.Player;
 import com.velocitypowered.api.proxy.ProxyServer;
 import dev.lorenzz.frankie.database.BlacklistRepository;
 import dev.lorenzz.frankie.database.BlacklistRepository.BlacklistRecord;
+import dev.lorenzz.frankie.database.PlayerRepository;
 import dev.lorenzz.frankie.hook.LuckPermsHook;
 import dev.lorenzz.frankie.listener.BlacklistListener;
+import dev.lorenzz.frankie.util.Text;
 
-import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
 
 /**
- * Handles blacklisting logic: persists records, schedules firewall blocks,
+ * Handles blacklisting logic: persists records, applies firewall blocks immediately,
  * and tracks in-memory blacklist state via listener.
+ * Supports blacklisting by player name (online or offline via nLogin/PlayerRepository)
+ * and by raw IP address.
  */
 public class BlacklistAgent {
-    private final ScheduledExecutorService scheduler;
     private final BlacklistRepository blacklistRepo;
+    private final PlayerRepository playerRepo;
     private final LuckPermsHook luckPermsHook;
-    private final FirewallUpdater firewallUpdater;
     private final ProxyServer proxy;
     private final BlacklistListener blacklistListener;
-    /** Map of IP to scheduled future for pending firewall block (to allow cancellation). */
-    private final Map<String, ScheduledFuture<?>> pendingBlocks = new ConcurrentHashMap<>();
 
-    public BlacklistAgent(ScheduledExecutorService scheduler,
-                          BlacklistRepository blacklistRepo,
+    // nLogin API — optional, null if nLogin not installed
+    private final nLoginAPI nloginApi;
+
+    public BlacklistAgent(BlacklistRepository blacklistRepo,
+                          PlayerRepository playerRepo,
                           LuckPermsHook luckPermsHook,
-                          FirewallUpdater firewallUpdater,
                           ProxyServer proxy,
                           BlacklistListener blacklistListener) {
-        this.scheduler = scheduler;
         this.blacklistRepo = blacklistRepo;
+        this.playerRepo = playerRepo;
         this.luckPermsHook = luckPermsHook;
-        this.firewallUpdater = firewallUpdater;
         this.proxy = proxy;
         this.blacklistListener = blacklistListener;
+
+        // Try to get nLogin API; null if plugin not loaded
+        nLoginAPI api = null;
+        try {
+            api = nLoginAPI.getApi();
+        } catch (Exception ignored) {
+        }
+        this.nloginApi = api;
     }
 
-    /**
-     * Call when a player should be blacklisted.
-     * Persists record (issuer, victim, IP, LuckPerms suffix, reason),
-     * then schedules firewall block after 1 minute.
-     * Updates the blacklist listener cache immediately.
-     * Returns a future that completes with the generated database ID.
-     */
-    public CompletableFuture<Long> blacklist(Player issuer, Player victim, String reason) {
-        String issuerName = issuer.getUsername();
-        UUID issuerUuid = issuer.getUniqueId();
-        UUID victimUuid = victim.getUniqueId();
-        String victimNameActual = victim.getUsername();
-        String ip = victim.getRemoteAddress().getAddress().getHostAddress();
-        String suffix = luckPermsHook.getSuffixForName(victimNameActual);
+    // --- Online player blacklist (kept for internal use) ---
 
-        // Persist record and schedule firewall block after insert completes
+    public CompletableFuture<Long> blacklist(UUID issuerUuid, String issuerName, Player victim, String reason) {
+        return doBlacklist(issuerUuid, issuerName, victim.getUniqueId(), victim.getUsername(),
+                victim.getRemoteAddress().getAddress().getHostAddress(), reason);
+    }
+
+    // --- Blacklist by name (online or offline) ---
+
+    public CompletableFuture<Long> blacklistByName(UUID issuerUuid, String issuerName, String victimName, String reason) {
+        Player onlineVictim = proxy.getPlayer(victimName).orElse(null);
+        if (onlineVictim != null) {
+            return blacklist(issuerUuid, issuerName, onlineVictim, reason);
+        }
+        // Offline: resolve UUID and IP
+        return playerRepo.findByName(victimName).thenCompose(cached -> {
+            if (cached.isEmpty()) {
+                throw new RuntimeException("Giocatore " + victimName + " mai visto sul server. Impossibile blacklistare.");
+            }
+            UUID victimUuid = cached.get().uuid();
+            String ip = resolveIp(victimName);
+            return doBlacklist(issuerUuid, issuerName, victimUuid, victimName, ip, reason);
+        });
+    }
+
+    // --- Blacklist by raw IP ---
+
+    public CompletableFuture<Long> blacklistByIp(UUID issuerUuid, String issuerName, String ip, String reason) {
+        // Try to find known accounts on this IP via nLogin
+        String victimName = ip; // fallback display name
+        UUID victimUuid = UUID.nameUUIDFromBytes(ip.getBytes()); // deterministic placeholder
+
+        if (nloginApi != null) {
+            try {
+                List<AccountData> accounts = nloginApi.getAccountsByIp(ip);
+                if (!accounts.isEmpty()) {
+                    AccountData first = accounts.get(0);
+                    victimName = first.getLastName();
+                    victimUuid = first.getUniqueId().orElse(victimUuid);
+                }
+            } catch (Exception ignored) {
+            }
+        }
+
+        UUID finalUuid = victimUuid;
+        String finalName = victimName;
+        return doBlacklist(issuerUuid, issuerName, finalUuid, finalName, ip, reason);
+    }
+
+    // --- Core blacklist logic ---
+
+    private CompletableFuture<Long> doBlacklist(UUID issuerUuid, String issuerName,
+                                                 UUID victimUuid, String victimName,
+                                                 String ip, String reason) {
+        String suffix = luckPermsHook.getSuffixForName(victimName);
+
         return blacklistRepo.insert(issuerUuid, issuerName,
-                victimUuid, victimNameActual,
+                victimUuid, victimName,
                 ip, suffix, reason != null ? reason : "")
                 .thenApplyAsync(generatedId -> {
-                    // Schedule firewall block after 60 seconds from now
-                    ScheduledFuture<?> future = scheduler.schedule(() -> {
-                        firewallUpdater.blockIp(ip);
-                        // Remove from pending map after execution (or cancellation will remove)
-                        pendingBlocks.remove(ip);
-                    }, 60, TimeUnit.SECONDS);
-                    pendingBlocks.put(ip, future);
+                    // Mark the IP as blacklisted: ProxyPing + PreLogin listeners enforce it natively
+                    blacklistListener.addIp(ip);
 
-                    // Update cache
-                    blacklistListener.setBlacklisted(victim, true);
+                    // Kick the victim if currently online
+                    proxy.getPlayer(victimUuid).ifPresent(v -> {
+                        blacklistListener.setBlacklisted(v, true);
+                        v.disconnect(Text.colorize("&cIl tuo account è stato blacklistato da VenrixMC."));
+                    });
 
                     return generatedId;
                 });
     }
 
-    /**
-     * Call when a player should be unblacklisted by name (works for offline players).
-     * Removes all blacklist records for the victim,
-     * cancels any pending firewall block,
-     * removes existing firewall block if any,
-     * and updates the blacklist listener cache if the victim is online.
-     * Returns an Optional containing the blacklist record that was removed (if any).
-     */
-    public CompletableFuture<Optional<BlacklistRecord>> unblacklistByName(Player issuer, String victimName) {
+    // --- IP resolution helpers ---
+
+    /** Try nLogin first, fall back to last known IP from blacklist records. */
+    private String resolveIp(String playerName) {
+        if (nloginApi != null) {
+            try {
+                String ip = nloginApi.getAddress(playerName);
+                if (ip != null && !ip.isBlank()) {
+                    return ip;
+                }
+            } catch (Exception ignored) {
+            }
+        }
+        // Fallback: check if this player was previously blacklisted (has a known IP)
+        try {
+            Optional<BlacklistRecord> prev = blacklistRepo.findLatestByVictimName(playerName).get();
+            if (prev.isPresent() && prev.get().ip != null && !prev.get().ip.isBlank()) {
+                return prev.get().ip;
+            }
+        } catch (Exception ignored) {
+        }
+        // ponytail: last resort — firewall block won't work but DB record exists
+        return "0.0.0.0";
+    }
+
+    // --- Unblacklist (unchanged) ---
+
+    public CompletableFuture<Optional<BlacklistRecord>> unblacklistByName(String victimName) {
         return blacklistRepo.findLatestByVictimName(victimName)
                 .thenCompose(optionalRecord -> {
                     if (optionalRecord.isPresent()) {
                         BlacklistRecord record = optionalRecord.get();
-                        return unblacklist(issuer, record.victimUuid)
+                        return unblacklist(record.victimUuid)
                                 .thenApply(v -> Optional.of(record));
                     } else {
                         return CompletableFuture.completedFuture(Optional.empty());
@@ -101,37 +168,13 @@ public class BlacklistAgent {
                 });
     }
 
-    /**
-     * Call when a player should be unblacklisted.
-     * Removes all blacklist records for the victim,
-     * cancels any pending firewall block,
-     * removes existing firewall block if any,
-     * and updates the blacklist listener cache if the victim is online.
-     * Returns a future that completes when all async operations finish.
-     */
-    public CompletableFuture<Void> unblacklist(Player issuer, UUID victimUuid) {
-        // Get the most recent IP for this victim (if any)
+    public CompletableFuture<Void> unblacklist(UUID victimUuid) {
         return blacklistRepo.getLatestIpByVictim(victimUuid)
                 .thenCompose(optionalIp -> {
-                    // Step 1: Cancel any pending scheduled block and remove from map
-                    optionalIp.ifPresent(ip -> {
-                        ScheduledFuture<?> future = pendingBlocks.remove(ip);
-                        if (future != null) {
-                            future.cancel(false); // cancel if not already executed
-                        }
-                        // Step 2: Unblock IP in firewall (ignore errors if not blocked)
-                        try {
-                            firewallUpdater.unblockIp(ip);
-                        } catch (Exception e) {
-                            // Log but continue
-                            System.err.println("[BlacklistAgent] Failed to unblock IP " + ip + ": " + e);
-                        }
-                    });
-                    // Step 3: Delete blacklist records from database
+                    optionalIp.ifPresent(blacklistListener::removeIp);
                     return blacklistRepo.deleteByVictim(victimUuid);
                 })
                 .thenCompose(deleteCount -> {
-                    // Step 4: Update cache if victim is online
                     Player victim = proxy.getPlayer(victimUuid).orElse(null);
                     if (victim != null) {
                         blacklistListener.setBlacklisted(victim, false);
@@ -140,16 +183,9 @@ public class BlacklistAgent {
                 });
     }
 
-    public ProxyServer getProxy() {
-        return proxy;
-    }
+    // --- Getters ---
 
-    public LuckPermsHook getLuckPermsHook() {
-        return luckPermsHook;
-    }
-
-    private void issuelog(String msg) {
-        // Simple logging; replace with proper logger if available
-        System.out.println("[BlacklistAgent] " + msg);
-    }
+    public ProxyServer getProxy() { return proxy; }
+    public LuckPermsHook getLuckPermsHook() { return luckPermsHook; }
+    public BlacklistListener getBlacklistListener() { return blacklistListener; }
 }

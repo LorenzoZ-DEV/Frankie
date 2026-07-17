@@ -1,12 +1,14 @@
-[01:43:01] [main/INFO] [com.velocitypowered.proxy.VelocityServer]: Booting up Velocity 3.5.0-SNAPSHOT (git-a7581821-b605)...
-[01:43:01] [main/INFO] [com.velocitypowered.proxy.network.ConnectionManager]: Connections will use epoll channels, libdeflate (Linux x86_64) compression, OpenSSL 3.x.x (Linux x86_64) ciphers
-[01:43:01] [main/WARN] [com.velocitypowered.proxy.config.VelocityConfiguration]: Player info forwarding is disabled! All players will appear to be connecting from the proxy and will have offline-mode UUIDs.
-[01:43:01] [main/INFO] [com.velocitypowered.proxy.VelocityServer]: Loading localizations...
-[01:43:01] [main/INFO] [com.velocitypowered.proxy.VelocityServer]: Loading plugins...
-[01:43:01] [main/INFO] [com.velocitypowered.proxy.plugin.VelocityPluginManager]: Loaded plugin frankie 1.0-SNAPSHOT by 
-[01:43:01] [main/INFO] [com.velocitypowered.proxy.VelocityServer]: Loaded 2 plugins
-[01:43:01] [Frankie - Task Executor #0/INFO] [frankie]: 
+[03:45:06] [main/INFO] [com.velocitypowered.proxy.VelocityServer]: Booting up Velocity 3.5.0-SNAPSHOT (git-06eb052a-b609)...
+[03:45:06] [main/INFO] [com.velocitypowered.proxy.network.ConnectionManager]: Connections will use epoll channels, libdeflate (Linux x86_64) compression, OpenSSL 3.x.x (Linux x86_64) ciphers
+[03:45:06] [main/WARN] [com.velocitypowered.proxy.config.VelocityConfiguration]: Player info forwarding is disabled! All players will appear to be connecting from the proxy and will have offline-mode UUIDs.
+[03:45:06] [main/INFO] [com.velocitypowered.proxy.VelocityServer]: Loading localizations...
+[03:45:06] [main/INFO] [com.velocitypowered.proxy.VelocityServer]: Loading plugins...
+[03:45:06] [main/INFO] [com.velocitypowered.proxy.plugin.VelocityPluginManager]: Loaded plugin frankie 1.0-SNAPSHOT by 
+[03:45:06] [main/INFO] [com.velocitypowered.proxy.VelocityServer]: Loaded 2 plugins
+[03:45:06] [Frankie - Task Executor #0/INFO] [frankie]: 
                             F R A N K I E    P R O X Y   C O R E
+                                   Developed by Lorenzzz
+
 ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣶⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
 ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣼⣿⣧⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
 ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣠⣾⣿⣿⣿⣷⣄⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
@@ -33,8 +35,8 @@
 
                 S T A R T I N G    T H E  P R O X Y  C O R E . . . .
 
-[01:43:01] [Frankie - Task Executor #0/INFO] [dev.lorenzz.frankie.libs.hikari.HikariDataSource]: Frankie-Pool - Starting...
-[01:43:02] [Frankie - Task Executor #0/ERROR] [frankie]: Failed to connect to MySQL, Frankie is disabled. Check config.yml
+[03:45:07] [Frankie - Task Executor #0/INFO] [dev.lorenzz.frankie.libs.hikari.HikariDataSource]: Frankie-Pool - Starting...
+[03:45:08] [Frankie - Task Executor #0/ERROR] [frankie]: Failed to connect to MySQL, Frankie is disabled. Check config.yml
 dev.lorenzz.frankie.libs.hikari.pool.HikariPool$PoolInitializationException: Failed to initialize pool: Communications link failure
 
 The last packet sent successfully to the server was 0 milliseconds ago. The driver has not received any packets from the server.
@@ -42,8 +44,8 @@ The last packet sent successfully to the server was 0 milliseconds ago. The driv
 	at dev.lorenzz.frankie.libs.hikari.pool.HikariPool.checkFailFast(HikariPool.java:592)
 	at dev.lorenzz.frankie.libs.hikari.pool.HikariPool.<init>(HikariPool.java:101)
 	at dev.lorenzz.frankie.libs.hikari.HikariDataSource.<init>(HikariDataSource.java:80)
-	at dev.lorenzz.frankie.database.Database.<init>(Database.java:37)
-	at dev.lorenzz.frankie.Frankie.onProxyInitialization(Frankie.java:58)
+	at dev.lorenzz.frankie.database.Database.<init>(Database.java:34)
+	at dev.lorenzz.frankie.Frankie.onProxyInitialization(Frankie.java:87)
 	at dev.lorenzz.frankie.Lmbda$1.execute(Unknown Source)
 	at com.velocitypowered.proxy.event.UntargetedEventHandler$VoidHandler.lambda$buildHandler$0(UntargetedEventHandler.java:56)
 	at com.velocitypowered.proxy.event.VelocityEventManager.fire(VelocityEventManager.java:677)
@@ -91,17 +93,14 @@ Caused by: java.net.ConnectException: Connessione rifiutata
 	at com.mysql.cj.protocol.StandardSocketFactory.connect(StandardSocketFactory.java:144)
 	at com.mysql.cj.protocol.a.NativeSocketConnection.connect(NativeSocketConnection.java:53)
 	... 22 more
-[01:43:02] [Netty epoll Boss #0/INFO] [com.velocitypowered.proxy.network.ConnectionManager]: Listening on /[0:0:0:0:0:0:0:0]:25565
-[01:43:02] [main/INFO] [com.velocitypowered.proxy.Metrics]: Velocity and some of its plugins collect metrics and send them to bStats (https://bStats.org).
-[01:43:02] [main/INFO] [com.velocitypowered.proxy.Metrics]: bStats collects some basic information for plugin authors, like how many people use
-[01:43:02] [main/INFO] [com.velocitypowered.proxy.Metrics]: their plugin and their total player count. It's recommended to keep bStats enabled, but
-[01:43:02] [main/INFO] [com.velocitypowered.proxy.Metrics]: if you're not comfortable with this, you can opt-out by editing the config.txt file in
-[01:43:02] [main/INFO] [com.velocitypowered.proxy.Metrics]: the '/plugins/bStats/' folder and setting enabled to false.
-[01:43:02] [main/INFO] [com.velocitypowered.proxy.Velocity]: Done (1,77s)!
-[01:43:32] [Shutdown thread/INFO] [com.velocitypowered.proxy.VelocityServer]: Shutting down the proxy...
-[01:43:32] [Shutdown thread/INFO] [com.velocitypowered.proxy.network.ConnectionManager]: Closing endpoint /0.0.0.0:25565
-[01:43:32] [Frankie - Task Executor #0/INFO] [frankie]: 
+[03:45:08] [Netty epoll Boss #0/INFO] [com.velocitypowered.proxy.network.ConnectionManager]: Listening on /[0:0:0:0:0:0:0:0]:25565
+[03:45:08] [main/INFO] [com.velocitypowered.proxy.Velocity]: Done (1,91s)!
+[03:45:23] [Shutdown thread/INFO] [com.velocitypowered.proxy.VelocityServer]: Shutting down the proxy...
+[03:45:23] [Shutdown thread/INFO] [com.velocitypowered.proxy.network.ConnectionManager]: Closing endpoint /0.0.0.0:25565
+[03:45:23] [Frankie - Task Executor #0/INFO] [frankie]: 
                             F R A N K I E    P R O X Y   C O R E
+                                   Developed by Lorenzzz
+
 ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣶⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
 ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣼⣿⣧⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
 ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣠⣾⣿⣿⣿⣷⣄⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀

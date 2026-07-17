@@ -81,4 +81,17 @@ public class YamlConfig {
         Object value = get(path);
         return value instanceof List<?> list ? (List<String>) list : Collections.emptyList();
     }
+
+    public boolean getBoolean(String path, boolean def) {
+        Object value = get(path);
+        if (value == null) return def;
+        if (value instanceof Boolean bool) return bool;
+        if (value instanceof String str) {
+            return Boolean.parseBoolean(str);
+        }
+        if (value instanceof Number num) {
+            return num.intValue() != 0;
+        }
+        return def;
+    }
 }

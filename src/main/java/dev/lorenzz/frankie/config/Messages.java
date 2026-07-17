@@ -2,13 +2,11 @@ package dev.lorenzz.frankie.config;
 
 import dev.lorenzz.frankie.util.Text;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.TextComponent;
 
+import java.util.Collection;
 import java.util.List;
 
-/**
- * Access to messages.yml. %prefix% resolves to the prefix of the message's
- * own section (staffchat.*, report.*, friend.* ...).
- */
 public class Messages {
 
     private final YamlConfig config;
@@ -17,10 +15,6 @@ public class Messages {
         this.config = config;
     }
 
-    /**
-     * Raw string with %prefix% and the given placeholder pairs applied.
-     * Placeholders are passed as (key, value, key, value, ...).
-     */
     public String raw(String path, String... placeholders) {
         String message = config.getString(path, "<missing message: " + path + ">");
         return apply(sectionOf(path), message, placeholders);
@@ -30,10 +24,17 @@ public class Messages {
         return Text.colorize(raw(path, placeholders));
     }
 
-    public List<Component> getList(String path, String... placeholders) {
+    public Collection<TextComponent> getList(String path, String... placeholders) {
         String section = sectionOf(path);
         return config.getStringList(path).stream()
-                .map(line -> Text.colorize(apply(section, line, placeholders)))
+                .map(line -> (TextComponent) Text.colorize(apply(section, line, placeholders)))
+                .toList();
+    }
+
+    public List<String> getStringList(String path, String... placeholders) {
+        String section = sectionOf(path);
+        return config.getStringList(path).stream()
+                .map(line -> apply(section, line, placeholders))
                 .toList();
     }
 

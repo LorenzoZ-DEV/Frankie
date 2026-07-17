@@ -8,6 +8,7 @@ repositories {
     mavenCentral()
     maven("https://repo.papermc.io/repository/maven-public/")
     maven("https://repo.aikar.co/content/groups/aikar/")
+    maven("https://repo.nickuc.com/maven-releases/")
 }
 
 dependencies {
@@ -18,6 +19,9 @@ dependencies {
     implementation("com.zaxxer:HikariCP:6.3.0")
     implementation("com.mysql:mysql-connector-j:9.3.0")
     implementation("org.yaml:snakeyaml:2.4")
+
+    // nLogin API
+    compileOnly("com.nickuc.login:api:10.4")
 }
 
 java {

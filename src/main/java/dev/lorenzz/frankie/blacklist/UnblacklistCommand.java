@@ -1,8 +1,11 @@
 package dev.lorenzz.frankie.blacklist;
 
 import co.aikar.commands.BaseCommand;
+import co.aikar.commands.CommandIssuer;
 import co.aikar.commands.annotation.CommandAlias;
+import co.aikar.commands.annotation.CommandCompletion;
 import co.aikar.commands.annotation.CommandPermission;
+import com.velocitypowered.api.command.CommandSource;
 import com.velocitypowered.api.proxy.Player;
 import dev.lorenzz.frankie.database.BlacklistRepository.BlacklistRecord;
 import dev.lorenzz.frankie.util.Text;
@@ -19,67 +22,61 @@ public class UnblacklistCommand extends BaseCommand {
 
     @CommandAlias("unblacklist|unbl")
     @CommandPermission("frankie.admin")
-    public void onUnblacklistCommand(Player player, String... args) {
+    @CommandCompletion("@players")
+    public void onUnblacklistCommand(CommandIssuer issuer, String... args) {
+        CommandSource source = (CommandSource) issuer.getIssuer();
+
         String victimName = null;
         boolean silent = false;
-        int i = 0;
-        while (i < args.length) {
-            String arg = args[i];
+        for (String arg : args) {
             if (arg.equalsIgnoreCase("-s")) {
                 silent = true;
-                i++;
             } else if (victimName == null) {
                 victimName = arg;
-                i++;
-            } else {
-                // unexpected extra token; ignore for simplicity
-                i++;
             }
         }
         if (victimName == null) {
-            player.sendMessage(Text.colorize("&8‹&4⚠&8›&f &7Utilizzo: &f/unblacklist (-s) <giocatore>"));
+            source.sendMessage(Text.colorize("&8‹&4⚠&8›&f &7Utilizzo: &f/unblacklist (-s) <giocatore>"));
             return;
         }
         final String finalVictimName = victimName;
         final boolean isSilent = silent;
 
-        // Call unblacklistByName and handle future
-        CompletableFuture<Optional<BlacklistRecord>> future = agent.unblacklistByName(player, finalVictimName);
+        CompletableFuture<Optional<BlacklistRecord>> future = agent.unblacklistByName(finalVictimName);
         future.whenComplete((result, throwable) -> {
             if (throwable != null) {
-                player.sendMessage(Text.colorize("&8‹&4⚠&8›&cErrore durante l'unblacklist: &f" + throwable.getMessage()));
+                String errMsg = throwable.getMessage();
+                if (throwable instanceof java.util.concurrent.CompletionException
+                        && throwable.getCause() != null) {
+                    errMsg = throwable.getCause().getMessage();
+                }
+                source.sendMessage(Text.colorize("&8‹&4⚠&8›&cErrore durante l'unblacklist: &f" + errMsg));
                 return;
             }
 
             if (result.isEmpty()) {
-                player.sendMessage(Text.colorize("&8‹&4⚠&8›&f &cIl giocatore &f" + finalVictimName + " &cnon è in blacklist."));
+                source.sendMessage(Text.colorize("&8‹&4⚠&8›&f &cIl giocatore &f" + finalVictimName + " &cnon è in blacklist."));
                 return;
             }
 
             BlacklistRecord record = result.get();
-            // We have the record: victimUuid, victimName, luckpermsSuffix, ip
-            // Note: the victimName in the record is the name at the time of blacklist.
-            // We'll use that for the message.
+            Player playerIssuer = issuer.getIssuer() instanceof Player p ? p : null;
+            String issuerName = playerIssuer != null ? playerIssuer.getUsername() : "Console";
+            String issuerSuffix = playerIssuer != null ? agent.getLuckPermsHook().suffix(playerIssuer) : "";
+            String victimNameActual = record.victimName;
+            String victimSuffix = record.luckpermsSuffix;
 
-            String issuerName = player.getUsername();
-            String issuerSuffix = agent.getLuckPermsHook().suffix(player);
-            String victimNameActual = record.victimName; // from record
-            String victimSuffix = record.luckpermsSuffix; // from record
-
-            // Build response message for issuer
             String responseMsg = "&8‹&4⚠&8›&f &aHai rimosso il blacklist con successo &r" +
                     victimSuffix + victimNameActual + " &aper";
             if (isSilent) {
                 responseMsg = "&9[S] &r" + responseMsg;
             }
-            player.sendMessage(Text.colorize(responseMsg));
+            source.sendMessage(Text.colorize(responseMsg));
 
-            // If not silent, broadcast to all players
             if (!isSilent) {
                 String broadcastMsg = "&f" + victimSuffix + victimNameActual +
                         " &aè stato rimosso dalla blacklist &fda &f" +
                         issuerSuffix + issuerName;
-                // Send to all players
                 agent.getProxy().getAllPlayers().forEach(p -> p.sendMessage(Text.colorize(broadcastMsg)));
             }
         });

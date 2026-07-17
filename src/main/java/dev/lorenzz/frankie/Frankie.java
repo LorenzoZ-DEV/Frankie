@@ -1,6 +1,5 @@
 package dev.lorenzz.frankie;
 
-import co.aikar.commands.VelocityCommandManager;
 import com.google.inject.Inject;
 import com.velocitypowered.api.event.Subscribe;
 import com.velocitypowered.api.event.proxy.ProxyInitializeEvent;
@@ -10,38 +9,22 @@ import com.velocitypowered.api.plugin.Plugin;
 import com.velocitypowered.api.plugin.annotation.DataDirectory;
 import com.velocitypowered.api.proxy.ProxyServer;
 import dev.lorenzz.frankie.blacklist.BlacklistAgent;
-import dev.lorenzz.frankie.blacklist.BlacklistCommand;
-import dev.lorenzz.frankie.blacklist.FirewallUpdater;
-import dev.lorenzz.frankie.blacklist.UnblacklistCommand;
-import dev.lorenzz.frankie.database.BlacklistRepository;
-import dev.lorenzz.frankie.command.FrankieCommand;
+import dev.lorenzz.frankie.command.CommandHandler;
 import dev.lorenzz.frankie.config.Messages;
 import dev.lorenzz.frankie.config.YamlConfig;
-import dev.lorenzz.frankie.database.Database;
-import dev.lorenzz.frankie.database.FriendRepository;
-import dev.lorenzz.frankie.database.PlayerRepository;
-import dev.lorenzz.frankie.database.ReportRepository;
-import dev.lorenzz.frankie.database.StaffNoteRepository;
-import dev.lorenzz.frankie.friend.FriendCommand;
+import dev.lorenzz.frankie.database.*;
 import dev.lorenzz.frankie.hook.LuckPermsHook;
 import dev.lorenzz.frankie.listener.BlacklistListener;
-import dev.lorenzz.frankie.listener.ConnectionListener;
-import dev.lorenzz.frankie.report.ReportCommand;
-import dev.lorenzz.frankie.request.RequestCommand;
-import dev.lorenzz.frankie.staffchat.StaffChatCommand;
-import dev.lorenzz.frankie.staffchat.StaffChatListener;
+import dev.lorenzz.frankie.manager.ModuleManager;
+import dev.lorenzz.frankie.privatemessage.PrivateMessageService;
 import dev.lorenzz.frankie.staffchat.StaffChatManager;
-import dev.lorenzz.frankie.staffnotes.StaffNotesCommand;
-import dev.lorenzz.frankie.teleport.GotoCommand;
-import dev.lorenzz.frankie.teleport.TpToCommand;
 import dev.lorenzz.frankie.util.AsciiArt;
+import dev.lorenzz.frankie.util.ConfigProvider;
 import org.slf4j.Logger;
 
 import java.nio.file.Path;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
 
-@Plugin(id = "frankie", name = "Frankie", version = "1.0-SNAPSHOT",
+@Plugin(id = "frankie", name = "Frankie", version = "1.0.1",
         dependencies = {@Dependency(id = "luckperms", optional = true)})
 public class Frankie {
 
@@ -50,7 +33,6 @@ public class Frankie {
     private final Path dataDirectory;
 
     private Database database;
-    private ScheduledExecutorService scheduler;
 
     @Inject
     public Frankie(ProxyServer proxy, Logger logger, @DataDirectory Path dataDirectory) {
@@ -70,6 +52,7 @@ public class Frankie {
             config = YamlConfig.load(dataDirectory, "config.yml");
             messagesConfig = YamlConfig.load(dataDirectory, "messages.yml");
             messages = new Messages(messagesConfig);
+            ConfigProvider.setConfig(config);
         } catch (Exception e) {
             logger.error("Failed to load configuration, Frankie is disabled", e);
             return;
@@ -90,44 +73,21 @@ public class Frankie {
         BlacklistRepository blacklistRepo = new BlacklistRepository(database);
         LuckPermsHook luckPerms = new LuckPermsHook(proxy, logger);
         StaffChatManager staffChat = new StaffChatManager(proxy, messages, luckPerms);
+        PrivateMessageService pmService = new PrivateMessageService();
+        BlacklistListener blacklistListener = new BlacklistListener(blacklistRepo);
+        blacklistListener.loadIpCache();
+        BlacklistAgent blacklistAgent = new BlacklistAgent(blacklistRepo, players, luckPerms, proxy, blacklistListener);
 
-        // Blacklist
-        scheduler = Executors.newSingleThreadScheduledExecutor();
-        FirewallUpdater firewallUpdater = new FirewallUpdater();
-        BlacklistListener blacklistListener = new BlacklistListener(blacklistRepo, messages);
-        BlacklistAgent blacklistAgent = new BlacklistAgent(scheduler, blacklistRepo, luckPerms, firewallUpdater, proxy, blacklistListener);
-        // Register command will be after commandManager initialization
-        // For now, we'll store agent and register later after commandManager is created
+        // 5. Registrazione Moduli (Listener)
+        ModuleManager moduleManager = new ModuleManager(this, proxy, messages, staffChat, friends, players, luckPerms, blacklistListener);
+        moduleManager.registerListeners();
 
-        proxy.getEventManager().register(this, new StaffChatListener(staffChat, messages));
-        proxy.getEventManager().register(this, new ConnectionListener(proxy, messages, staffChat, friends, players, luckPerms));
-        proxy.getEventManager().register(this, blacklistListener);
+        // 6. Registrazione Comandi
+        CommandHandler commandHandler = new CommandHandler(this, proxy, logger, messages, config, messagesConfig, staffChat, reports, friends, players, staffNotes, pmService, blacklistAgent);
+        commandHandler.register();
 
-        proxy.getChannelRegistrar().register(TpToCommand.CHANNEL);
-
-        VelocityCommandManager commandManager = new VelocityCommandManager(proxy, this);
-        commandManager.getCommandCompletions().registerAsyncCompletion("players", context ->
-                proxy.getAllPlayers().stream()
-                        .map(com.velocitypowered.api.proxy.Player::getUsername)
-                        .toList());
-        commandManager.getCommandCompletions().registerAsyncCompletion("servers", context ->
-                proxy.getAllServers().stream()
-                        .map(server -> server.getServerInfo().getName())
-                        .toList());
-
-        // Register commands
-        commandManager.registerCommand(new StaffChatCommand(staffChat, messages));
-        commandManager.registerCommand(new ReportCommand(proxy, messages, reports, config));
-        commandManager.registerCommand(new RequestCommand(proxy, messages, reports, config));
-        commandManager.registerCommand(new FriendCommand(proxy, messages, friends, players, config));
-        commandManager.registerCommand(new StaffNotesCommand(proxy, messages, staffNotes, players));
-        commandManager.registerCommand(new TpToCommand(proxy, messages));
-        commandManager.registerCommand(new GotoCommand(proxy, messages));
-        commandManager.registerCommand(new FrankieCommand(config, messagesConfig, messages, logger));
-        commandManager.registerCommand(new BlacklistCommand(blacklistAgent));
-        commandManager.registerCommand(new UnblacklistCommand(blacklistAgent));
-
-        logger.info("Frankie enabled: staffchat, reports, requests and friends are ready.");
+        // 7. Conferma avvio
+        logger.info("Frankie enabled successfully.");
         logger.info("Developed by Lorenzz.");
     }
 
@@ -135,9 +95,6 @@ public class Frankie {
     public void onProxyShutdown(ProxyShutdownEvent event) {
         if (database != null) {
             database.close();
-        }
-        if (scheduler != null && !scheduler.isShutdown()) {
-            scheduler.shutdownNow();
         }
         AsciiArt.shutdown(logger);
     }

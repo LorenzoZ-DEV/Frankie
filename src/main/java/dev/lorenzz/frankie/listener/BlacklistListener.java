@@ -1,64 +1,100 @@
 package dev.lorenzz.frankie.listener;
 
+import com.velocitypowered.api.event.Subscribe;
+import com.velocitypowered.api.event.connection.PreLoginEvent;
+import com.velocitypowered.api.event.proxy.ProxyPingEvent;
+import com.velocitypowered.api.event.ResultedEvent.GenericResult;
+import com.velocitypowered.api.proxy.InboundConnection;
 import com.velocitypowered.api.proxy.Player;
 import dev.lorenzz.frankie.database.BlacklistRepository;
-import dev.lorenzz.frankie.config.Messages;
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.format.NamedTextColor;
-import net.kyori.adventure.text.format.TextDecoration;
 
+import java.net.InetSocketAddress;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Tracks blacklisted players in-memory for quick access by other components,
- * and handles kicking blacklisted players on login.
+ * Tracks blacklisted players and IPs in-memory for quick enforcement:
+ * - denies logins from blacklisted IPs (PreLoginEvent)
+ * - cancels the server ping for blacklisted IPs so the server looks offline (ProxyPingEvent)
+ * The IP cache is loaded at startup and kept in sync when blacklist actions happen.
  */
 public class BlacklistListener {
 
     private final BlacklistRepository blacklistRepository;
-    private final Messages messages;
-    /** Set of UUIDs of players currently known to be blacklisted (in-memory cache). */
     private final Set<UUID> blacklistedPlayers = ConcurrentHashMap.newKeySet();
+    private final Set<String> blacklistedIps = ConcurrentHashMap.newKeySet();
 
-    public BlacklistListener(BlacklistRepository blacklistRepository, Messages messages) {
+    private static final Component DENY = Component.text("""
+            Il tuo account è blacklistato da questo VenrixMC
+            
+            Questa tipo di punizione è permanente e non può essere revocata.
+    
+            Se pensi che sia un errore, contatta lo staff tramite Discord: https://discord.gg/uHrkc2g3r
+            """);
+
+    public BlacklistListener(BlacklistRepository blacklistRepository) {
         this.blacklistRepository = blacklistRepository;
-        this.messages = messages;
     }
 
-    /**
-     * Called when a player logs in. Checks the database and kicks if blacklisted.
-     */
-    public void onLogin(Player player) {
-        UUID uuid = player.getUniqueId();
-        // Check database for blacklist entry
-        blacklistRepository.isVictimBlacklisted(uuid).thenAccept(isBlacklisted -> {
-            if (isBlacklisted) {
-                // Kick the player
-                Component kickMessage = Component.text()
-                    .append(Component.text("Sei stato blacklistato! ").color(NamedTextColor.GOLD).decoration(TextDecoration.BOLD, true))
-                    .append(Component.newline())
-                    .append(Component.text("Questa punizione è definitiva e non può essere contestata.").color(NamedTextColor.RED))
-                    .append(Component.newline())
-                    .append(Component.text("Contatta lo staff per assistenza.").color(NamedTextColor.YELLOW))
-                    .build();
-                player.disconnect(kickMessage);
-                blacklistedPlayers.add(uuid);
-            } else {
-                // Not blacklisted, remove from cache if present
-                blacklistedPlayers.remove(uuid);
-            }
-        }).exceptionally(ex -> {
-            System.err.println("[BlacklistListener] Failed to check blacklist status for " + uuid + ": " + ex);
-            return null;
-        });
+    // --- IP cache management ---
+
+    /** Loads all currently-blacklisted IPs from the database. Call at proxy init. */
+    public void loadIpCache() {
+        blacklistRepository.allBlacklistedIps().thenAccept(blacklistedIps::addAll)
+                .exceptionally(ex -> {
+                    System.err.println("[BlacklistListener] Failed to load IP cache: " + ex);
+                    return null;
+                });
     }
 
-    /**
-     * Marks a player as blacklisted or not in the in-memory cache.
-     * Called when a blacklist action is performed.
-     */
+    public void addIp(String ip) {
+        if (ip != null && !ip.isBlank()) {
+            blacklistedIps.add(ip);
+        }
+    }
+
+    public void removeIp(String ip) {
+        if (ip != null) {
+            blacklistedIps.remove(ip);
+        }
+    }
+
+    private boolean isIpBlacklisted(InetSocketAddress remote) {
+        if (remote == null || remote.getAddress() == null) {
+            return false;
+        }
+        String ip = remote.getAddress().getHostAddress();
+        return ip != null && blacklistedIps.contains(ip);
+    }
+
+    // --- Events ---
+
+    /** Cancel the ping for a blacklisted IP — the server looks unreachable to them. */
+    @Subscribe
+    public void onProxyPing(ProxyPingEvent event) {
+        if (isIpBlacklisted(event.getConnection().getRemoteAddress())) {
+            event.setResult(GenericResult.denied());
+        }
+    }
+
+    /** Deny login from a blacklisted IP. */
+    @Subscribe
+    public void onPreLogin(PreLoginEvent event) {
+        InboundConnection conn = event.getConnection();
+        InetSocketAddress remote = conn.getRemoteAddress();
+        if (remote == null || remote.getAddress() == null) {
+            return;
+        }
+        String ip = remote.getAddress().getHostAddress();
+        if (blacklistedIps.contains(ip)) {
+            event.setResult(PreLoginEvent.PreLoginComponentResult.denied(DENY));
+        }
+    }
+
+    // --- UUID cache for online players (existing behavior) ---
+
     public void setBlacklisted(Player player, boolean blacklisted) {
         UUID uuid = player.getUniqueId();
         if (blacklisted) {
@@ -68,20 +104,10 @@ public class BlacklistListener {
         }
     }
 
-    /**
-     * Checks if a player is currently considered blacklisted (in-memory cache).
-     * Note: This may be slightly out-of-sync with the database if the blacklist
-     * was modified by another server instance. For authoritative check, use
-     * BlacklistRepository.isVictimBlacklisted.
-     */
     public boolean isBlacklisted(Player player) {
         return blacklistedPlayers.contains(player.getUniqueId());
     }
 
-    /**
-     * Returns the in-memory set of blacklisted player UUIDs.
-     * For internal use only.
-     */
     public Set<UUID> getBlacklistedPlayers() {
         return blacklistedPlayers;
     }
