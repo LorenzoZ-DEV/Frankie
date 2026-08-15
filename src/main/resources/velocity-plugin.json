@@ -2,10 +2,16 @@
   "id": "frankie",
   "name": "Frankie",
   "version": "${version}",
+  "description": "Proxy core: staffchat, amici, report, note staff, teleport, messaggi privati e blacklist.",
+  "authors": ["Lorenzzz"],
   "main": "dev.lorenzz.frankie.Frankie",
   "dependencies": [
     {
       "id": "luckperms",
+      "optional": true
+    },
+    {
+      "id": "nlogin",
       "optional": true
     }
   ]

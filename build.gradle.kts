@@ -14,6 +14,8 @@ repositories {
 dependencies {
     compileOnly("com.velocitypowered:velocity-api:3.5.0-SNAPSHOT")
     compileOnly("net.luckperms:api:5.4")
+    // Gia' fornita dal proxy (velocity-api la porta con se'): non va shadata.
+    compileOnly("com.google.code.gson:gson:2.13.2")
 
     implementation("co.aikar:acf-velocity:0.5.1-SNAPSHOT")
     implementation("com.zaxxer:HikariCP:6.3.0")
@@ -22,6 +24,11 @@ dependencies {
 
     // nLogin API
     compileOnly("com.nickuc.login:api:10.4")
+
+    // compileOnly non finisce sul classpath dei test: va ridichiarato.
+    testImplementation("com.velocitypowered:velocity-api:3.5.0-SNAPSHOT")
+    testImplementation("org.junit.jupiter:junit-jupiter:5.11.4")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 
 java {
@@ -29,6 +36,10 @@ java {
 }
 
 tasks {
+    test {
+        useJUnitPlatform()
+    }
+
     runVelocity {
         // Configure the Velocity version for our task.
         // This is the only required configuration besides applying the plugin.

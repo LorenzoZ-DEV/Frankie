@@ -1,15 +1,13 @@
 package dev.lorenzz.frankie.database;
 
-import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
 /**
- * UUID/name cache table, used to resolve offline players by name.
+ * UUID/name/IP cache, used to resolve players who are not currently online.
  */
 public class PlayerRepository {
 
@@ -19,25 +17,33 @@ public class PlayerRepository {
         this.database = database;
     }
 
-    public void upsert(UUID uuid, String name) {
-        CompletableFuture.runAsync(() -> {
-            try (Connection connection = database.getConnection();
-                 PreparedStatement statement = connection.prepareStatement(
-                         "INSERT INTO frankie_players (uuid, name) VALUES (?, ?) ON DUPLICATE KEY UPDATE name = VALUES(name)")) {
+    /**
+     * Records a login. {@code last_seen} is set explicitly: relying on
+     * {@code ON UPDATE CURRENT_TIMESTAMP} silently skipped the update whenever
+     * the row was unchanged (the usual case — same uuid, same name), which left
+     * {@code findByName}'s ordering stale.
+     */
+    public CompletableFuture<Void> upsert(UUID uuid, String name, String ip) {
+        return database.update(connection -> {
+            try (PreparedStatement statement = connection.prepareStatement("""
+                    INSERT INTO frankie_players (uuid, name, last_ip, last_seen)
+                    VALUES (?, ?, ?, CURRENT_TIMESTAMP)
+                    ON DUPLICATE KEY UPDATE
+                        name = VALUES(name),
+                        last_ip = COALESCE(VALUES(last_ip), last_ip),
+                        last_seen = CURRENT_TIMESTAMP""")) {
                 statement.setString(1, uuid.toString());
                 statement.setString(2, name);
+                statement.setString(3, ip);
                 statement.executeUpdate();
-            } catch (SQLException e) {
-                throw new RuntimeException(e);
             }
         });
     }
 
     public CompletableFuture<Optional<CachedPlayer>> findByName(String name) {
-        return CompletableFuture.supplyAsync(() -> {
-            try (Connection connection = database.getConnection();
-                 PreparedStatement statement = connection.prepareStatement(
-                         "SELECT uuid, name FROM frankie_players WHERE name = ? ORDER BY last_seen DESC LIMIT 1")) {
+        return database.query(connection -> {
+            try (PreparedStatement statement = connection.prepareStatement(
+                    "SELECT uuid, name FROM frankie_players WHERE name = ? ORDER BY last_seen DESC LIMIT 1")) {
                 statement.setString(1, name);
                 try (ResultSet result = statement.executeQuery()) {
                     if (result.next()) {
@@ -47,8 +53,23 @@ public class PlayerRepository {
                     }
                     return Optional.empty();
                 }
-            } catch (SQLException e) {
-                throw new RuntimeException(e);
+            }
+        });
+    }
+
+    /** Last IP seen for a player name, used to blacklist offline accounts. */
+    public CompletableFuture<Optional<String>> lastIpByName(String name) {
+        return database.query(connection -> {
+            try (PreparedStatement statement = connection.prepareStatement(
+                    "SELECT last_ip FROM frankie_players WHERE name = ? ORDER BY last_seen DESC LIMIT 1")) {
+                statement.setString(1, name);
+                try (ResultSet result = statement.executeQuery()) {
+                    if (result.next()) {
+                        String ip = result.getString("last_ip");
+                        return ip == null || ip.isBlank() ? Optional.<String>empty() : Optional.of(ip);
+                    }
+                    return Optional.<String>empty();
+                }
             }
         });
     }

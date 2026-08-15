@@ -4,7 +4,9 @@ import co.aikar.commands.BaseCommand;
 import co.aikar.commands.annotation.CommandAlias;
 import co.aikar.commands.annotation.CommandCompletion;
 import co.aikar.commands.annotation.Default;
+import co.aikar.commands.annotation.Description;
 import co.aikar.commands.annotation.Optional;
+import co.aikar.commands.annotation.Syntax;
 import com.velocitypowered.api.proxy.Player;
 import com.velocitypowered.api.proxy.ProxyServer;
 import dev.lorenzz.frankie.config.Messages;
@@ -12,6 +14,7 @@ import dev.lorenzz.frankie.config.YamlConfig;
 import dev.lorenzz.frankie.database.ReportRepository;
 import dev.lorenzz.frankie.util.Broadcast;
 import dev.lorenzz.frankie.util.Cooldowns;
+import dev.lorenzz.frankie.util.Futures;
 import net.kyori.adventure.text.Component;
 
 import java.util.Map;
@@ -27,16 +30,21 @@ public class ReportCommand extends BaseCommand {
     private final Messages messages;
     private final ReportRepository reports;
     private final YamlConfig config;
+    private final Futures futures;
     private final Map<UUID, Long> lastReport = new ConcurrentHashMap<>();
 
-    public ReportCommand(ProxyServer proxy, Messages messages, ReportRepository reports, YamlConfig config) {
+    public ReportCommand(ProxyServer proxy, Messages messages, ReportRepository reports,
+                         YamlConfig config, Futures futures) {
         this.proxy = proxy;
         this.messages = messages;
         this.reports = reports;
         this.config = config;
+        this.futures = futures;
     }
 
     @Default
+    @Syntax("<giocatore> <motivo>")
+    @Description("Segnala un giocatore allo staff.")
     @CommandCompletion("@players")
     public void onReport(Player player, @Optional String targetName, @Optional String reason) {
         if (targetName == null || reason == null || reason.isBlank()) {
@@ -53,19 +61,19 @@ public class ReportCommand extends BaseCommand {
             player.sendMessage(messages.get("report.cooldown", "%time%", String.valueOf(remaining)));
             return;
         }
-        java.util.Optional<Player> targetOptional = proxy.getPlayer(targetName);
-        if (targetOptional.isEmpty()) {
+        Player target = proxy.getPlayer(targetName).orElse(null);
+        if (target == null) {
             player.sendMessage(messages.get("report.player_not_found"));
             return;
         }
-        Player target = targetOptional.get();
         String server = target.getCurrentServer()
                 .map(connection -> connection.getServerInfo().getName())
                 .orElse("?");
 
         lastReport.put(player.getUniqueId(), System.currentTimeMillis());
-        reports.saveReport(player.getUniqueId(), player.getUsername(),
-                target.getUniqueId(), target.getUsername(), reason, server);
+        futures.handle(reports.saveReport(player.getUniqueId(), player.getUsername(),
+                        target.getUniqueId(), target.getUsername(), reason, server),
+                "save report by " + player.getUsername());
 
         player.sendMessage(messages.get("report.sent", "%target%", target.getUsername()));
         Component staffMessage = messages.get("report.staff_format",

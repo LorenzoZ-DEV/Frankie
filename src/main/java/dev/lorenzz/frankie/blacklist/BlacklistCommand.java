@@ -1,135 +1,80 @@
 package dev.lorenzz.frankie.blacklist;
 
 import co.aikar.commands.BaseCommand;
+import co.aikar.commands.CommandIssuer;
 import co.aikar.commands.annotation.CommandAlias;
 import co.aikar.commands.annotation.CommandCompletion;
 import co.aikar.commands.annotation.CommandPermission;
-import co.aikar.commands.CommandIssuer;
+import co.aikar.commands.annotation.Default;
+import co.aikar.commands.annotation.Description;
+import co.aikar.commands.annotation.Syntax;
+import com.google.common.net.InetAddresses;
 import com.velocitypowered.api.command.CommandSource;
-import com.velocitypowered.api.proxy.Player;
+import dev.lorenzz.frankie.blacklist.BlacklistAgent.BlacklistResult;
+import dev.lorenzz.frankie.blacklist.BlacklistAgent.UnknownPlayerException;
 import dev.lorenzz.frankie.config.Messages;
-import dev.lorenzz.frankie.util.Text;
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.event.HoverEvent;
+import dev.lorenzz.frankie.hook.LuckPermsHook;
+import dev.lorenzz.frankie.util.Futures;
+import org.slf4j.Logger;
 
-import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
-import java.util.regex.Pattern;
 
+@CommandAlias("blacklist|bl|blist|spermaban")
+@CommandPermission(Issuer.PERMISSION)
 public class BlacklistCommand extends BaseCommand {
+
     private final BlacklistAgent agent;
+    private final BlacklistAnnouncer announcer;
     private final Messages messages;
+    private final LuckPermsHook luckPerms;
+    private final Logger logger;
 
-    private static final Pattern IP_PATTERN =
-            Pattern.compile("^\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}$");
-
-    private static final UUID CONSOLE_UUID = UUID.nameUUIDFromBytes("Console".getBytes());
-
-    public BlacklistCommand(BlacklistAgent agent, Messages messages) {
+    public BlacklistCommand(BlacklistAgent agent, BlacklistAnnouncer announcer, Messages messages,
+                            LuckPermsHook luckPerms, Logger logger) {
         this.agent = agent;
+        this.announcer = announcer;
         this.messages = messages;
+        this.luckPerms = luckPerms;
+        this.logger = logger;
     }
 
-    @CommandAlias("blacklist|bl|blist|spermaban")
-    @CommandPermission("frankie.admin")
+    @Default
+    @Syntax("[-s] <giocatore|ip> <motivo>")
+    @Description("Blacklista permanentemente un giocatore o un indirizzo IP.")
     @CommandCompletion("@players")
-    public void onBlacklistCommand(CommandIssuer issuer, String... args) {
-        CommandSource source = (CommandSource) issuer.getIssuer();
-
-        String target = null;
-        boolean silent = false;
-        StringBuilder reasonBuilder = new StringBuilder();
-
-        for (String arg : args) {
-            if (arg.equalsIgnoreCase("-s")) {
-                silent = true;
-            } else if (target == null) {
-                target = arg;
-            } else {
-                if (reasonBuilder.length() > 0) reasonBuilder.append(' ');
-                reasonBuilder.append(arg);
-            }
-        }
-
-        if (target == null) {
-            source.sendMessage(Text.colorize("&8‹&4⚠&8›&f &7Utilizzo: &f/blacklist (-s) <giocatore|ip> <motivo>"));
+    public void onBlacklist(CommandIssuer issuer, String[] args) {
+        CommandSource source = issuer.getIssuer();
+        BlacklistArgs parsed = BlacklistArgs.parse(args, true);
+        if (!parsed.valid()) {
+            source.sendMessage(messages.get("blacklist.usage"));
+            source.sendMessage(messages.get("blacklist.example"));
             return;
         }
 
-        String reason = reasonBuilder.toString();
-        if (reason.isEmpty()) {
-            source.sendMessage(Text.colorize("&8‹&4⚠&8›&f &7Utilizzo: &f/blacklist (-s) <giocatore|ip> <motivo>"));
-            return;
-        }
+        Issuer sender = Issuer.of(source, luckPerms);
+        String target = parsed.target();
+        String reason = parsed.reason();
 
-        Player playerIssuer = issuer.getIssuer() instanceof Player p ? p : null;
-        UUID issuerUuid = playerIssuer != null ? playerIssuer.getUniqueId() : CONSOLE_UUID;
-        String issuerName = playerIssuer != null ? playerIssuer.getUsername() : "Console";
+        CompletableFuture<BlacklistResult> future = InetAddresses.isInetAddress(target)
+                ? agent.blacklistByIp(sender.uuid(), sender.name(), target, reason)
+                : agent.blacklistByName(sender.uuid(), sender.name(), target, reason);
 
-        final String finalTarget = target;
-        final boolean finalSilent = silent;
-        boolean isIp = IP_PATTERN.matcher(finalTarget).matches();
-
-        CompletableFuture<Long> future;
-        if (isIp) {
-            future = agent.blacklistByIp(issuerUuid, issuerName, finalTarget, reason);
-        } else {
-            future = agent.blacklistByName(issuerUuid, issuerName, finalTarget, reason);
-        }
-        future.whenComplete((generatedId, throwable) -> {
-            if (throwable != null) {
-                String errMsg = throwable.getMessage();
-                if (throwable instanceof java.util.concurrent.CompletionException
-                        && throwable.getCause() != null) {
-                    errMsg = throwable.getCause().getMessage();
-                }
-                source.sendMessage(Text.colorize("&8‹&4⚠&8›&cErrore: &f" + errMsg));
+        future.whenComplete((result, error) -> {
+            if (error != null) {
+                fail(source, target, error);
                 return;
             }
-
-            String issuerSuffix = playerIssuer != null ? agent.getLuckPermsHook().suffix(playerIssuer) : "";
-            String serverOrigin = playerIssuer != null
-                    ? playerIssuer.getCurrentServer().map(c -> c.getServerInfo().getName()).orElse("unknown")
-                    : "console";
-
-            String responseMsg = messages.raw("blacklist.response",
-                    "$playerSuffix", "",
-                    "$playerDisplayName", finalTarget,
-                    "$reason", reason,
-                    "$id", String.valueOf(generatedId));
-            if (finalSilent) {
-                responseMsg = messages.raw("blacklist.silent_prefix") + responseMsg;
-            }
-            source.sendMessage(Text.colorize(responseMsg));
-
-            if (!finalSilent) {
-                String rawBroadcast = messages.raw("blacklist.broadcast",
-                        "$playerSuffix", "",
-                        "$playerDisplayName", finalTarget,
-                        "$reason", reason,
-                        "$serverOrigin", serverOrigin);
-                String[] parts = rawBroadcast.split("\\$executorSuffix\\$executor", 2);
-
-                Component broadcastComponent = Component.empty();
-
-                // 1. Aggiungiamo la parte prima del nome
-                if (parts.length > 0 && !parts[0].isEmpty()) {
-                    broadcastComponent = broadcastComponent.append(Text.colorize(parts[0]));
-                }
-
-                Component executorComponent = Text.colorize(issuerSuffix + issuerName);
-
-                if (parts.length > 1 && !parts[1].isEmpty()) {
-                    Component hoverText = Text.colorize(parts[1]);
-                    executorComponent = executorComponent.hoverEvent(HoverEvent.showText(hoverText));
-                }
-
-                broadcastComponent = broadcastComponent.append(executorComponent);
-
-                // 5. Inviamo a tutti i giocatori online
-                final Component finalBroadcast = broadcastComponent;
-                agent.getProxy().getAllPlayers().forEach(p -> p.sendMessage(finalBroadcast));
-            }
+            announcer.blacklisted(source, sender, result, parsed.silent());
         });
+    }
+
+    private void fail(CommandSource source, String target, Throwable error) {
+        Throwable cause = Futures.unwrap(error);
+        if (cause instanceof UnknownPlayerException unknown) {
+            source.sendMessage(messages.get("blacklist.never_seen", "%target%", unknown.playerName()));
+            return;
+        }
+        logger.error("Blacklist of {} failed", target, cause);
+        source.sendMessage(messages.get("blacklist.failed", "%target%", target));
     }
 }

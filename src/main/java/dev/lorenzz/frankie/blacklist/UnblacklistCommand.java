@@ -5,80 +5,60 @@ import co.aikar.commands.CommandIssuer;
 import co.aikar.commands.annotation.CommandAlias;
 import co.aikar.commands.annotation.CommandCompletion;
 import co.aikar.commands.annotation.CommandPermission;
+import co.aikar.commands.annotation.Default;
+import co.aikar.commands.annotation.Description;
+import co.aikar.commands.annotation.Syntax;
 import com.velocitypowered.api.command.CommandSource;
-import com.velocitypowered.api.proxy.Player;
-import dev.lorenzz.frankie.database.BlacklistRepository.BlacklistRecord;
-import dev.lorenzz.frankie.util.Text;
+import dev.lorenzz.frankie.config.Messages;
+import dev.lorenzz.frankie.hook.LuckPermsHook;
+import dev.lorenzz.frankie.util.Futures;
+import org.slf4j.Logger;
 
-import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
-
+@CommandAlias("unblacklist|unbl")
+@CommandPermission(Issuer.PERMISSION)
 public class UnblacklistCommand extends BaseCommand {
-    private final BlacklistAgent agent;
 
-    public UnblacklistCommand(BlacklistAgent agent) {
+    private final BlacklistAgent agent;
+    private final BlacklistAnnouncer announcer;
+    private final Messages messages;
+    private final LuckPermsHook luckPerms;
+    private final Logger logger;
+
+    public UnblacklistCommand(BlacklistAgent agent, BlacklistAnnouncer announcer, Messages messages,
+                              LuckPermsHook luckPerms, Logger logger) {
         this.agent = agent;
+        this.announcer = announcer;
+        this.messages = messages;
+        this.luckPerms = luckPerms;
+        this.logger = logger;
     }
 
-    @CommandAlias("unblacklist|unbl")
-    @CommandPermission("frankie.admin")
+    @Default
+    @Syntax("[-s] <giocatore>")
+    @Description("Rimuove un giocatore dalla blacklist.")
     @CommandCompletion("@players")
-    public void onUnblacklistCommand(CommandIssuer issuer, String... args) {
-        CommandSource source = (CommandSource) issuer.getIssuer();
-
-        String victimName = null;
-        boolean silent = false;
-        for (String arg : args) {
-            if (arg.equalsIgnoreCase("-s")) {
-                silent = true;
-            } else if (victimName == null) {
-                victimName = arg;
-            }
-        }
-        if (victimName == null) {
-            source.sendMessage(Text.colorize("&8‹&4⚠&8›&f &7Utilizzo: &f/unblacklist (-s) <giocatore>"));
+    public void onUnblacklist(CommandIssuer issuer, String[] args) {
+        CommandSource source = issuer.getIssuer();
+        BlacklistArgs parsed = BlacklistArgs.parse(args, false);
+        if (!parsed.valid()) {
+            source.sendMessage(messages.get("blacklist.unblacklist_usage"));
             return;
         }
-        final String finalVictimName = victimName;
-        final boolean isSilent = silent;
 
-        CompletableFuture<Optional<BlacklistRecord>> future = agent.unblacklistByName(finalVictimName);
-        future.whenComplete((result, throwable) -> {
-            if (throwable != null) {
-                String errMsg = throwable.getMessage();
-                if (throwable instanceof java.util.concurrent.CompletionException
-                        && throwable.getCause() != null) {
-                    errMsg = throwable.getCause().getMessage();
-                }
-                source.sendMessage(Text.colorize("&8‹&4⚠&8›&cErrore durante l'unblacklist: &f" + errMsg));
+        Issuer sender = Issuer.of(source, luckPerms);
+        String target = parsed.target();
+
+        agent.unblacklistByName(target, sender.name()).whenComplete((removed, error) -> {
+            if (error != null) {
+                logger.error("Unblacklist of {} failed", target, Futures.unwrap(error));
+                source.sendMessage(messages.get("blacklist.failed", "%target%", target));
                 return;
             }
-
-            if (result.isEmpty()) {
-                source.sendMessage(Text.colorize("&8‹&4⚠&8›&f &cIl giocatore &f" + finalVictimName + " &cnon è in blacklist."));
+            if (removed.isEmpty()) {
+                source.sendMessage(messages.get("blacklist.not_blacklisted", "%target%", target));
                 return;
             }
-
-            BlacklistRecord record = result.get();
-            Player playerIssuer = issuer.getIssuer() instanceof Player p ? p : null;
-            String issuerName = playerIssuer != null ? playerIssuer.getUsername() : "Console";
-            String issuerSuffix = playerIssuer != null ? agent.getLuckPermsHook().suffix(playerIssuer) : "";
-            String victimNameActual = record.victimName;
-            String victimSuffix = record.luckpermsSuffix;
-
-            String responseMsg = "&8‹&4⚠&8›&f &aHai rimosso il blacklist con successo &r" +
-                    victimSuffix + victimNameActual + " &aper";
-            if (isSilent) {
-                responseMsg = "&9[S] &r" + responseMsg;
-            }
-            source.sendMessage(Text.colorize(responseMsg));
-
-            if (!isSilent) {
-                String broadcastMsg = "&f" + victimSuffix + victimNameActual +
-                        " &aè stato rimosso dalla blacklist &fda &f" +
-                        issuerSuffix + issuerName;
-                agent.getProxy().getAllPlayers().forEach(p -> p.sendMessage(Text.colorize(broadcastMsg)));
-            }
+            announcer.unblacklisted(source, sender, removed.get(), parsed.silent());
         });
     }
 }

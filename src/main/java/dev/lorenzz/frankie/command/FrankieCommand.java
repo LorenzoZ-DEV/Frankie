@@ -7,7 +7,7 @@ import co.aikar.commands.annotation.Default;
 import co.aikar.commands.annotation.Subcommand;
 import com.velocitypowered.api.command.CommandSource;
 import dev.lorenzz.frankie.config.Messages;
-import dev.lorenzz.frankie.config.YamlConfig;
+import dev.lorenzz.frankie.core.FrankieServices;
 import org.slf4j.Logger;
 
 /**
@@ -18,16 +18,14 @@ import org.slf4j.Logger;
 @CommandPermission("frankie.admin")
 public class FrankieCommand extends BaseCommand {
 
-    private final YamlConfig config;
-    private final YamlConfig messagesConfig;
+    private final FrankieServices services;
     private final Messages messages;
     private final Logger logger;
 
-    public FrankieCommand(YamlConfig config, YamlConfig messagesConfig, Messages messages, Logger logger) {
-        this.config = config;
-        this.messagesConfig = messagesConfig;
-        this.messages = messages;
-        this.logger = logger;
+    public FrankieCommand(FrankieServices services) {
+        this.services = services;
+        this.messages = services.messages;
+        this.logger = services.logger;
     }
 
     @Default
@@ -39,8 +37,7 @@ public class FrankieCommand extends BaseCommand {
     @Subcommand("reload")
     public void onReload(CommandSource source) {
         try {
-            config.reload();
-            messagesConfig.reload();
+            services.reloadConfigs();
             source.sendMessage(messages.get("general.reload_success"));
         } catch (Exception e) {
             logger.error("Failed to reload configuration", e);

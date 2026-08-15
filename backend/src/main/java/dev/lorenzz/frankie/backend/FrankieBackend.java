@@ -1,69 +1,71 @@
 package dev.lorenzz.frankie.backend;
 
-import com.google.common.io.ByteArrayDataInput;
-import com.google.common.io.ByteStreams;
-import org.bukkit.Bukkit;
-import org.bukkit.entity.Player;
-import org.bukkit.event.EventHandler;
-import org.bukkit.event.Listener;
-import org.bukkit.event.player.PlayerJoinEvent;
+import dev.lorenzz.frankie.backend.antiswear.AntiSwearGuard;
+import dev.lorenzz.frankie.backend.antiswear.LegacyChatFilter;
+import dev.lorenzz.frankie.backend.blacklist.BlacklistBridge;
+import dev.lorenzz.frankie.backend.blacklist.BlacklistProtocol;
+import dev.lorenzz.frankie.backend.blacklist.MenuStyle;
+import dev.lorenzz.frankie.backend.teleport.TeleportBridge;
 import org.bukkit.plugin.java.JavaPlugin;
-import org.bukkit.plugin.messaging.PluginMessageListener;
-
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Frankie backend companion. The Velocity proxy connects a player to the
- * target's server and then sends a "frankie:tpto" plugin message; this plugin
- * runs the actual entity teleport, which the proxy cannot do.
+ * Frankie backend companion. The proxy owns the data and the permissions; this
+ * plugin does the two things a proxy cannot do itself:
+ *
+ * <ul>
+ *   <li>teleport a player onto another player ({@code frankie:tpto}),</li>
+ *   <li>open and drive the blacklist inventory ({@code frankie:blacklist}).</li>
+ * </ul>
  */
-public class FrankieBackend extends JavaPlugin implements Listener, PluginMessageListener {
+public class FrankieBackend extends JavaPlugin {
 
-    private static final String CHANNEL = "frankie:tpto";
-
-    private final Map<String, String> pending = new ConcurrentHashMap<>();
+    private BlacklistBridge blacklist;
 
     @Override
     public void onEnable() {
-        getServer().getMessenger().registerIncomingPluginChannel(this, CHANNEL, this);
-        getServer().getPluginManager().registerEvents(this, this);
+        saveDefaultConfig();
+
+        TeleportBridge teleport = new TeleportBridge(this);
+        getServer().getMessenger().registerIncomingPluginChannel(this, TeleportBridge.CHANNEL, teleport);
+        getServer().getPluginManager().registerEvents(teleport, this);
+
+        blacklist = new BlacklistBridge(this, new MenuStyle(getConfig()));
+        getServer().getMessenger().registerIncomingPluginChannel(
+                this, BlacklistProtocol.CHANNEL, blacklist);
+        getServer().getMessenger().registerOutgoingPluginChannel(this, BlacklistProtocol.CHANNEL);
+        getServer().getPluginManager().registerEvents(blacklist, this);
+
+        AntiSwearGuard antiSwear = new AntiSwearGuard(this);
+        getServer().getMessenger().registerIncomingPluginChannel(
+                this, AntiSwearGuard.CHANNEL, antiSwear);
+        getServer().getMessenger().registerOutgoingPluginChannel(this, AntiSwearGuard.CHANNEL);
+        getServer().getPluginManager().registerEvents(antiSwear, this);
+        if (getConfig().getBoolean("antiswear.legacy-chat-event", false)) {
+            getServer().getPluginManager().registerEvents(new LegacyChatFilter(antiSwear), this);
+            getLogger().info("Antiswear: filtro anche sull'evento chat legacy.");
+        }
+
+        // Says plainly that this build is the one running: "nothing appears in
+        // the log" is otherwise indistinguishable from an old jar still loaded.
+        getLogger().info("FrankieBackend attivo (canali: tpto, blacklist, antiswear).");
     }
 
     @Override
     public void onDisable() {
         getServer().getMessenger().unregisterIncomingPluginChannel(this);
+        getServer().getMessenger().unregisterOutgoingPluginChannel(this);
+        if (blacklist != null) {
+            // Leaving a stale menu open would let clicks act on removed rows.
+            blacklist.closeAll();
+        }
     }
 
+    /** Re-reads config.yml, including every GUI text. */
     @Override
-    public void onPluginMessageReceived(String channel, Player carrier, byte[] message) {
-        if (!CHANNEL.equals(channel)) {
-            return;
+    public void reloadConfig() {
+        super.reloadConfig();
+        if (blacklist != null) {
+            blacklist.restyle(new MenuStyle(getConfig()));
         }
-        ByteArrayDataInput in = ByteStreams.newDataInput(message);
-        String who = in.readUTF();
-        String target = in.readUTF();
-        if (!teleport(who, target)) {
-            pending.put(who.toLowerCase(), target);
-        }
-    }
-
-    @EventHandler
-    public void onJoin(PlayerJoinEvent event) {
-        String target = pending.remove(event.getPlayer().getName().toLowerCase());
-        if (target != null) {
-            Bukkit.getScheduler().runTaskLater(this,
-                    () -> teleport(event.getPlayer().getName(), target), 5L);
-        }
-    }
-
-    private boolean teleport(String whoName, String targetName) {
-        Player who = Bukkit.getPlayerExact(whoName);
-        Player target = Bukkit.getPlayerExact(targetName);
-        if (who == null || target == null) {
-            return false;
-        }
-        who.teleport(target);
-        return true;
     }
 }

@@ -33,6 +33,9 @@
     reload_success: "%prefix% &#B6B6C2ᴄᴏɴꜰɪɢ ᴇ ᴍᴇꜱꜱᴀɢɢɪ ʀɪᴄᴀʀɪᴄᴀᴛɪ ᴄᴏɴ &#4ADE80ꜱᴜᴄᴄᴇꜱꜱᴏ&#B6B6C2."
     reload_failed: "%prefix% &#B6B6C2ʀɪᴄᴀʀɪᴄᴀᴍᴇɴᴛᴏ &#EF4444ꜰᴀʟʟɪᴛᴏ&#B6B6C2. ᴄᴏɴᴛʀᴏʟʟᴀ ʟᴀ ᴄᴏɴꜱᴏʟᴇ."
 
+    # Mostrato quando un'operazione sul database fallisce (dettagli in console).
+    error: "%prefix% &#EF4444ᴇʀʀᴏʀᴇ ɪɴᴛᴇʀɴᴏ&#B6B6C2. ʀɪᴘʀᴏᴠᴀ ᴏ ᴄᴏɴᴛᴀᴛᴛᴀ ʟᴏ ꜱᴛᴀꜰꜰ."
+
   staffchat:
 
     # Messaggi generali.
@@ -150,27 +153,90 @@
     friend_offline: "%prefix% &#C77DFF%user% &#B6B6C2è ᴏʀᴀ &#EF4444ᴏꜰꜰʟɪɴᴇ&#B6B6C2."
 
   blacklist:
-    usage: '&8‹&4⚠&8›&f &7Utilizzo: &f/blacklist (-s) <giocatore|ip> <motivo>'
-    example: '&8‹&4⚠&8›&f &7Esempio /blacklist 1.2.3.4 -s motivo'
+
+    # NOTA: i placeholder usano la sintassi %nome% come nel resto del file.
+    # Le vecchie chiavi con $playerDisplayName / $executor non sono piu' lette.
+    prefix: "&#EF4444&lʙʟᴀᴄᴋʟɪꜱᴛ &#3F3F46&l•"
+
+    usage: '%prefix% &7Utilizzo: &f/blacklist (-s) <giocatore|ip> <motivo>'
+    unblacklist_usage: '%prefix% &7Utilizzo: &f/unblacklist (-s) <giocatore>'
+    example: '%prefix% &7Esempio: &f/blacklist -s 1.2.3.4 bypass ban'
     silent_prefix: '&9[S] &r'
-    broadcast: '&f$playerSuffix$playerDisplayName &aè stato blacklistato &fda &f$executorSuffix$executor &7Motivo: &c$reason &7Durata: &cpermanente &7Da: &c$serverOrigin'
-    response: '&8‹&4⚠&8›&f &aHai eseguito il blacklist con successo &r$playerSuffix$playerDisplayName &aper &r$reason &aper la durata di &cpermanente &aID: $id'
+
+    # Schermata mostrata a chi e'blacklistato: al kick e al tentativo di login.
+    deny_screen:
+      - "&cIl tuo account è blacklistato da questo network."
+      - ""
+      - "&7Questo tipo di punizione è &cpermanente &7e non può essere revocata."
+      - ""
+      - "&7Se pensi che sia un errore, contatta lo staff su Discord:"
+      - "&b&nhttps://discord.gg/uHrkc2g3r"
+
+    response: '%prefix% &aBlacklist eseguito su &r%victimsuffix%%victim% &aper &f%reason% &7(ID: %id%)'
+    broadcast: '&f%victimsuffix%%victim% &aè stato blacklistato &fda &f%executorsuffix%%executor%'
+    # Righe mostrate passando il mouse sul broadcast. Lascia vuoto per disattivare.
+    broadcast_hover:
+      - "&7Motivo: &c%reason%"
+      - "&7Durata: &cpermanente"
+      - "&7Da: &c%server%"
+      - "&7ID: &c%id%"
+
+    unblacklist_response: '%prefix% &aHai rimosso dalla blacklist &r%victimsuffix%%victim%'
+    unblacklist_broadcast: '&f%victimsuffix%%victim% &aè stato rimosso dalla blacklist &fda &f%executorsuffix%%executor%'
+
+    never_seen: '%prefix% &c%target% &7non ha mai effettuato l''accesso: non c''è nulla da blacklistare.'
+    not_blacklisted: '%prefix% &7Il giocatore &f%target% &7non è in blacklist.'
+    failed: '%prefix% &cOperazione fallita su &f%target%&c. Controlla la console.'
+
+    # /blacklistusers (alias /blusers) — apre la GUI sul server backend
+    # (richiede il plugin FrankieBackend installato sul server dove si trova il
+    # giocatore). I testi della GUI stanno nel config.yml di FrankieBackend.
+    list_opening: '%prefix% &7Apertura della lista blacklist...'
+    list_no_server: '%prefix% &cDevi essere collegato a un server per aprire la lista.'
+    # Usati solo dalla console, che non ha inventari.
+    list_header: '%prefix% &7Giocatori in blacklist: &f%count%'
+    list_entry: '&8 • &f%victim% &7(&f%times%x&7) &8- &7%reason% &8- &7da &f%executor% &8- &7%date% &8- &7%ip%'
+    list_empty: '%prefix% &7Nessun giocatore è attualmente in blacklist.'
 
   global:
+    usage: "&8[&d&l✦&8] &7Utilizzo: &f/global <messaggio>"
     format: "&8[&d&l✦&8] &d&lGLOBAL &8┃ &f%player% &8• &b%server% &8┃ &f%message%"
 
   privatemessages:
+    usage: "&8[&d&l✉&8] &7Utilizzo: &f/msg <giocatore> <messaggio>"
+    reply_usage: "&8[&d&l✉&8] &7Utilizzo: &f/r <messaggio>"
     self: "&8[&c&l✘&8] &cNon puoi inviare messaggi a te stesso."
+    player_not_found: "&8[&c&l✘&8] &cIl giocatore &f%target% &cnon è online."
+    target_offline: "&8[&c&l✘&8] &cIl giocatore a cui stavi rispondendo è uscito."
     no-reply: "&8[&c&l✘&8] &cNon hai nessun giocatore a cui rispondere."
     format-sent: "&8[&d&l✉ &fTu &8→ &e%target%&8] &f%message%"
     format-received: "&8[&d&l✉ &e%target% &8→ &fTu&8] &f%message%"
     spy-format: "&8[&9&l✦ &bSPY&8] &9%player% &8→ &b%target% &8┃ &f%message%"
-    spy-enabled: "&8[&a&l✔&8] &aSpy dei messaggi privati abilitato."
-    spy-disabled: "&8[&c&l✘&8] &cSpy dei messaggi privati disabilitato."
-    spy-no-permission: "&8[&c&l✘&8] &cNon hai il permesso di eseguire questo comando."
 
   antiswear:
-    alert: "&8[&4&l⚠ &cMUTA&8] &f{PLAYER} &8• &e{SERVER} &8┃ &7Messaggio: &f{ORIGINAL}"
+    prefix: "&8[&4&l⚠ &cCHAT&8]"
+    # Inviato a chi ha il permesso frankie.antiswear.alert.
+    # Placeholder: %player% %server% %message% %censored% %type% %score%
+    alert: "&8[&4&l⚠ &cCHAT&8] &f%player% &8• &e%server% &8┃ &7Messaggio: &f%message% &8(&c%type% %score%&8)"
+    # Mostrato all'autore quando il messaggio viene bloccato. Sui client 1.19.1+
+    # la chat è firmata e il proxy non può bloccarla: parte solo l'alert.
+    blocked: "&8[&c&l✘&8] &cIl tuo messaggio contiene parole non consentite."
+
+    # Comando /antiswear, per gestire le parole apprese automaticamente.
+    status: "%prefix% &7Parole apprese: &f%words% &8• &7API: &f%api% &8• &7Azione: &f%action%"
+    status_servers: "%prefix% &7Lista inviata a: &f%servers%"
+    usage: "%prefix% &7/antiswear &f<list|add|remove|check>"
+    list_header: "%prefix% &7Parole apprese: &f%count% &8• &7pagina &f%page%&7/&f%pages%"
+    list_entry: "&8 • &f%word% &8- &c%type% &8(&7%score%&8) &8- &7%date%"
+    list_empty: "%prefix% &7Nessuna parola appresa finora."
+    added: "%prefix% &aAggiunta la parola &f%word%&a."
+    removed: "%prefix% &aRimossa la parola &f%word%&a."
+    not_known: "%prefix% &7La parola &f%word% &7non e' nel vocabolario appreso."
+    already_known: "%prefix% &7La parola &f%word% &7e' gia' nel vocabolario."
+    invalid_word: "%prefix% &c%word% &7non e' una parola valida."
+    check_clean: "%prefix% &aNessun problema rilevato nel testo."
+    check_flagged: "%prefix% &cSegnalato come &f%type% &8(&7%score%&8)&c: &f%censored%"
+
     words:
       - "parolaccia"
       - "bestemmione"

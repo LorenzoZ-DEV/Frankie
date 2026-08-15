@@ -9,7 +9,11 @@ mysql:
   database: "frankie"
   username: "root"
   password: ""
+  # Parametri appesi alla JDBC URL. Modificali solo se sai cosa stai facendo.
+  properties: "useUnicode=true&characterEncoding=utf8&useSSL=false&allowPublicKeyRetrieval=true"
   pool:
+    # Dimensiona anche il thread pool delle query: nessuna query gira piu'
+    # sul ForkJoin common pool condiviso con tutta la JVM.
     maximum-pool-size: 10
     minimum-idle: 2
     connection-timeout: 5000
@@ -27,6 +31,69 @@ request:
 friends:
   max-friends: 50
 
+# Sistema blacklist (/blacklist, /unblacklist, /blacklistusers).
+# Il blocco avviene su tre identita': IP, UUID dell'account e nome. L'UUID e'
+# sempre attivo ed e' quello che regge se il giocatore cambia connessione.
+blacklist:
+  # Nasconde il server dalla lista (ping) a chi e' blacklistato per IP:
+  # la rete risulta irraggiungibile invece di confermare il ban.
+  hide-server-on-ping: true
+  # Blocca anche in base al nome. Tienilo attivo su server cracked (offline
+  # mode), dove il nome e' l'identita'. Su server premium mettilo a false: un
+  # nome rilasciato puo' essere ripreso da una persona estranea al ban.
+  block-by-name: true
+  # GUI di /blacklistusers. L'inventario viene aperto dal plugin FrankieBackend
+  # sul server dove si trova il giocatore; qui si configura solo cosa manda il
+  # proxy. I testi e gli item stanno nel config.yml di FrankieBackend.
+  gui:
+    # Voci per pagina, massimo 45 (l'ultima riga e' la navigazione).
+    page-size: 45
+    # Per quanti secondi riusare la stessa lista invece di rileggere il
+    # database a ogni click. Ogni blacklist/unblacklist la invalida comunque.
+    cache-seconds: 15
+
+# Filtro parolacce (/antiswear).
+# Il filtro lavora in tre passaggi, dal piu' economico al piu' costoso:
+#   1. la lista scritta a mano in messages.yml (antiswear.words)
+#   2. le parole gia' apprese, salvate in banned_words.json
+#   3. Google Perspective API, solo se i primi due non hanno trovato nulla
+# I primi due sono locali e gratuiti: sono loro a rendere sostenibile il terzo.
+antiswear:
+  # censor = sostituisce la parola con c*****o. deny = blocca il messaggio.
+  # ATTENZIONE: dai client 1.19.1 in poi la chat e' firmata e il proxy non puo'
+  # ne' modificarla ne' bloccarla. Per quei giocatori parte comunque l'alert
+  # allo staff, ma il messaggio arriva in chat: il blocco va fatto sul backend.
+  action: censor
+
+  perspective:
+    # Richiede una tua API key: https://developers.perspectiveapi.com
+    # Va richiesta a Google (e' gratuita) e incollata qui sotto.
+    enabled: false
+    api-key: ""
+    # Lingue del testo analizzato. Attenzione: non tutti gli attributi sono
+    # supportati in tutte le lingue, e chiederne uno non supportato fa
+    # rispondere l'API con un errore 400.
+    languages:
+      - "it"
+    # Oltre questo tempo la risposta viene ignorata: la consegna del messaggio
+    # aspetta questa chiamata, quindi non deve poter restare appesa.
+    timeout-millis: 2500
+    # Quando un messaggio viene segnalato, analizza anche le singole parole per
+    # capire quali sono e impararle in banned_words.json. Dalla volta dopo
+    # vengono bloccate localmente, senza chiamare l'API.
+    learn-words: true
+    # Le parole piu' corte di cosi' non vengono mai imparate (troppo generiche).
+    min-word-length: 3
+    # Punteggio minimo perche' un attributo faccia scattare il filtro (0.0-1.0).
+    # Piu' basso = piu' severo. Togli una riga per ignorare quell'attributo.
+    thresholds:
+      TOXICITY: 0.5
+      SEVERE_TOXICITY: 0.7
+      IDENTITY_ATTACK: 0.4
+      INSULT: 0.6
+      PROFANITY: 0.64
+      THREAT: 0.65
+
 # Moduli di Frankie (attivabili/disattivabili)
 modules:
   staffchat: true
@@ -39,3 +106,4 @@ modules:
   global: true
   stafflist: true
   antiswear: true
+  blacklist: true

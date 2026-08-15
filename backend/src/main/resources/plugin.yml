@@ -1,6 +1,15 @@
 name: FrankieBackend
-version: 1.0
+version: 1.1
 main: dev.lorenzz.frankie.backend.FrankieBackend
 api-version: "1.21"
 author: Lorenzzz
-description: Backend companion for Frankie proxy /tpto position teleport.
+description: "Backend companion for Frankie proxy: /tpto position teleport and the blacklist GUI."
+
+# Declared so they are NOT granted automatically. On Bukkit an operator holds
+# every permission that no plugin has declared, so an undeclared bypass would
+# silently exempt every admin from the chat filter — and admins are exactly who
+# tests it.
+permissions:
+  frankie.antiswear.bypass:
+    description: Non subisce il filtro parolacce.
+    default: false

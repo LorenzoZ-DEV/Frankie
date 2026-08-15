@@ -1,120 +1,103 @@
 package dev.lorenzz.frankie.command;
 
 import co.aikar.commands.VelocityCommandManager;
-import com.velocitypowered.api.proxy.ProxyServer;
-import dev.lorenzz.frankie.Frankie;
-import dev.lorenzz.frankie.blacklist.BlacklistAgent;
+import com.velocitypowered.api.proxy.Player;
+import dev.lorenzz.frankie.antiswear.AntiSwearCommand;
+import dev.lorenzz.frankie.blacklist.BlacklistBrowser;
 import dev.lorenzz.frankie.blacklist.BlacklistCommand;
+import dev.lorenzz.frankie.blacklist.BlacklistUsersCommand;
 import dev.lorenzz.frankie.blacklist.UnblacklistCommand;
-import dev.lorenzz.frankie.config.Messages;
-import dev.lorenzz.frankie.config.YamlConfig;
-import dev.lorenzz.frankie.database.FriendRepository;
-import dev.lorenzz.frankie.database.PlayerRepository;
-import dev.lorenzz.frankie.database.ReportRepository;
-import dev.lorenzz.frankie.database.StaffNoteRepository;
+import dev.lorenzz.frankie.core.FrankieServices;
 import dev.lorenzz.frankie.friend.FriendCommand;
-import dev.lorenzz.frankie.privatemessage.PrivateMessageService;
 import dev.lorenzz.frankie.report.ReportCommand;
 import dev.lorenzz.frankie.request.RequestCommand;
-import dev.lorenzz.frankie.staffchat.StaffChatManager;
 import dev.lorenzz.frankie.staffchat.StaffChatCommand;
 import dev.lorenzz.frankie.staffnotes.StaffNotesCommand;
 import dev.lorenzz.frankie.teleport.GotoCommand;
 import dev.lorenzz.frankie.teleport.TpToCommand;
-import dev.lorenzz.frankie.util.ConfigProvider;
-import org.slf4j.Logger;
 
+/**
+ * Registers commands and tab completions for every enabled module.
+ */
 public class CommandHandler {
 
-    private final Frankie plugin;
-    private final ProxyServer proxy;
-    private final Logger logger;
-    private final Messages messages;
-    private final YamlConfig config;
-    private final YamlConfig messagesConfig;
+    private final FrankieServices services;
 
-    // Dipendenze specifiche per i comandi
-    private final StaffChatManager staffChat;
-    private final ReportRepository reports;
-    private final FriendRepository friends;
-    private final PlayerRepository players;
-    private final StaffNoteRepository staffNotes;
-    private final PrivateMessageService pmService;
-    private final BlacklistAgent blacklistAgent;
-
-    public CommandHandler(Frankie plugin, ProxyServer proxy, Logger logger, Messages messages,
-                          YamlConfig config, YamlConfig messagesConfig, StaffChatManager staffChat,
-                          ReportRepository reports, FriendRepository friends, PlayerRepository players,
-                          StaffNoteRepository staffNotes, PrivateMessageService pmService,
-                          BlacklistAgent blacklistAgent) {
-        this.plugin = plugin;
-        this.proxy = proxy;
-        this.logger = logger;
-        this.messages = messages;
-        this.config = config;
-        this.messagesConfig = messagesConfig;
-        this.staffChat = staffChat;
-        this.reports = reports;
-        this.friends = friends;
-        this.players = players;
-        this.staffNotes = staffNotes;
-        this.pmService = pmService;
-        this.blacklistAgent = blacklistAgent;
-    }
-
-    private boolean isModuleEnabled(String key) {
-        return ConfigProvider.getBoolean("modules." + key, true);
+    public CommandHandler(FrankieServices services) {
+        this.services = services;
     }
 
     public void register() {
-        VelocityCommandManager commandManager = new VelocityCommandManager(proxy, plugin);
+        VelocityCommandManager commands = new VelocityCommandManager(services.proxy, services.plugin);
+        registerCompletions(commands);
 
-        // Registrazione dei completamenti (Tab Completer)
-        commandManager.getCommandCompletions().registerAsyncCompletion("players", context ->
-                proxy.getAllPlayers().stream()
-                        .map(com.velocitypowered.api.proxy.Player::getUsername)
+        // Core commands, always available.
+        commands.registerCommand(new FrankieCommand(services));
+
+        if (services.module("staffchat")) {
+            commands.registerCommand(new StaffChatCommand(services.staffChat, services.messages));
+        }
+        if (services.module("reports")) {
+            commands.registerCommand(new ReportCommand(
+                    services.proxy, services.messages, services.reports, services.config, services.futures));
+        }
+        if (services.module("requests")) {
+            commands.registerCommand(new RequestCommand(
+                    services.proxy, services.messages, services.reports, services.config, services.futures));
+        }
+        if (services.module("friends")) {
+            commands.registerCommand(new FriendCommand(services.proxy, services.messages,
+                    services.friends, services.resolver, services.config, services.futures));
+        }
+        if (services.module("staffnotes")) {
+            commands.registerCommand(new StaffNotesCommand(
+                    services.messages, services.staffNotes, services.resolver, services.futures));
+        }
+        if (services.module("teleport")) {
+            services.proxy.getChannelRegistrar().register(TpToCommand.CHANNEL);
+            commands.registerCommand(new TpToCommand(services.proxy, services.messages));
+            commands.registerCommand(new GotoCommand(services.proxy, services.messages));
+        }
+        // The toggle existed in config.yml but was never read: /global registered
+        // unconditionally.
+        if (services.module("global")) {
+            commands.registerCommand(new GlobalCommand(services.proxy, services.messages));
+        }
+        if (services.module("blacklist")) {
+            // The GUI lives on the backend companion; the proxy only serves it.
+            services.proxy.getChannelRegistrar().register(BlacklistBrowser.CHANNEL);
+            commands.registerCommand(new BlacklistCommand(services.blacklistAgent,
+                    services.blacklistAnnouncer, services.messages, services.luckPerms,
+                    services.logger));
+            commands.registerCommand(new UnblacklistCommand(services.blacklistAgent,
+                    services.blacklistAnnouncer, services.messages, services.luckPerms,
+                    services.logger));
+            commands.registerCommand(new BlacklistUsersCommand(services.blacklistBrowser,
+                    services.messages, services.futures));
+        }
+        if (services.module("privatemessages")) {
+            commands.registerCommand(new MsgCommand(
+                    services.proxy, services.messages, services.privateMessages));
+            commands.registerCommand(new ReplyCommand(
+                    services.proxy, services.messages, services.privateMessages));
+        }
+        if (services.module("antiswear")) {
+            commands.registerCommand(new AntiSwearCommand(
+                    services.antiSwear, services.antiSwearSync, services.messages));
+        }
+        if (services.module("stafflist")) {
+            commands.registerCommand(new StaffListCommand(services.proxy, services.messages));
+        }
+    }
+
+    private void registerCompletions(VelocityCommandManager commands) {
+        commands.getCommandCompletions().registerAsyncCompletion("players", context ->
+                services.proxy.getAllPlayers().stream()
+                        .map(Player::getUsername)
                         .toList());
-        commandManager.getCommandCompletions().registerAsyncCompletion("servers", context ->
-                proxy.getAllServers().stream()
+        commands.getCommandCompletions().registerAsyncCompletion("servers", context ->
+                services.proxy.getAllServers().stream()
                         .map(server -> server.getServerInfo().getName())
                         .toList());
-
-        // Registrazione dei comandi in base ai moduli
-        if (isModuleEnabled("staffchat")) {
-            commandManager.registerCommand(new StaffChatCommand(staffChat, messages));
-        }
-        if (isModuleEnabled("reports")) {
-            commandManager.registerCommand(new ReportCommand(proxy, messages, reports, config));
-        }
-        if (isModuleEnabled("requests")) {
-            commandManager.registerCommand(new RequestCommand(proxy, messages, reports, config));
-        }
-        if (isModuleEnabled("friends")) {
-            commandManager.registerCommand(new FriendCommand(proxy, messages, friends, players, config));
-        }
-        if (isModuleEnabled("staffnotes")) {
-            commandManager.registerCommand(new StaffNotesCommand(proxy, messages, staffNotes, players));
-        }
-        if (isModuleEnabled("teleport")) {
-            proxy.getChannelRegistrar().register(TpToCommand.CHANNEL);
-            commandManager.registerCommand(new TpToCommand(proxy, messages));
-            commandManager.registerCommand(new GotoCommand(proxy, messages));
-        }
-
-        // Comandi core sempre attivi
-        commandManager.registerCommand(new FrankieCommand(config, messagesConfig, messages, logger));
-        commandManager.registerCommand(new GlobalCommand(proxy, messages));
-
-        if (isModuleEnabled("blacklist")) {
-            commandManager.registerCommand(new BlacklistCommand(blacklistAgent, messages));
-            commandManager.registerCommand(new UnblacklistCommand(blacklistAgent));
-        }
-        if (isModuleEnabled("privatemessages")) {
-            commandManager.registerCommand(new MsgCommand(proxy, messages, pmService));
-            commandManager.registerCommand(new ReplyCommand(proxy, messages, pmService));
-        }
-        if (isModuleEnabled("stafflist")) {
-            commandManager.registerCommand(new StaffListCommand(proxy, messages));
-        }
     }
 }

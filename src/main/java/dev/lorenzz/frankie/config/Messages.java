@@ -2,11 +2,15 @@ package dev.lorenzz.frankie.config;
 
 import dev.lorenzz.frankie.util.Text;
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.TextComponent;
 
-import java.util.Collection;
 import java.util.List;
 
+/**
+ * Reads messages.yml and turns entries into coloured components.
+ *
+ * <p>Placeholders are passed as flat key/value pairs:
+ * {@code messages.get("friend.removed", "%target%", name)}.
+ */
 public class Messages {
 
     private final YamlConfig config;
@@ -15,6 +19,7 @@ public class Messages {
         this.config = config;
     }
 
+    /** Raw (uncoloured) text with placeholders applied. */
     public String raw(String path, String... placeholders) {
         String message = config.getString(path, "<missing message: " + path + ">");
         return apply(sectionOf(path), message, placeholders);
@@ -24,10 +29,9 @@ public class Messages {
         return Text.colorize(raw(path, placeholders));
     }
 
-    public Collection<TextComponent> getList(String path, String... placeholders) {
-        String section = sectionOf(path);
-        return config.getStringList(path).stream()
-                .map(line -> (TextComponent) Text.colorize(apply(section, line, placeholders)))
+    public List<Component> getList(String path, String... placeholders) {
+        return getStringList(path, placeholders).stream()
+                .map(Text::colorize)
                 .toList();
     }
 
@@ -36,6 +40,11 @@ public class Messages {
         return config.getStringList(path).stream()
                 .map(line -> apply(section, line, placeholders))
                 .toList();
+    }
+
+    /** A string list rendered as one component with newlines, for kick screens. */
+    public Component getMultiline(String path, String... placeholders) {
+        return Text.colorizeLines(getStringList(path, placeholders));
     }
 
     private String sectionOf(String path) {

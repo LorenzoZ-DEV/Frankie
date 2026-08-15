@@ -3,7 +3,9 @@ package dev.lorenzz.frankie.request;
 import co.aikar.commands.BaseCommand;
 import co.aikar.commands.annotation.CommandAlias;
 import co.aikar.commands.annotation.Default;
+import co.aikar.commands.annotation.Description;
 import co.aikar.commands.annotation.Optional;
+import co.aikar.commands.annotation.Syntax;
 import com.velocitypowered.api.proxy.Player;
 import com.velocitypowered.api.proxy.ProxyServer;
 import dev.lorenzz.frankie.config.Messages;
@@ -11,6 +13,7 @@ import dev.lorenzz.frankie.config.YamlConfig;
 import dev.lorenzz.frankie.database.ReportRepository;
 import dev.lorenzz.frankie.util.Broadcast;
 import dev.lorenzz.frankie.util.Cooldowns;
+import dev.lorenzz.frankie.util.Futures;
 import net.kyori.adventure.text.Component;
 
 import java.util.Map;
@@ -18,7 +21,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * /request <reason> — helpop-style assistance request sent to the staff.
+ * /request &lt;motivo&gt; — helpop-style assistance request sent to the staff.
  */
 @CommandAlias("request|helpop")
 public class RequestCommand extends BaseCommand {
@@ -29,16 +32,21 @@ public class RequestCommand extends BaseCommand {
     private final Messages messages;
     private final ReportRepository reports;
     private final YamlConfig config;
+    private final Futures futures;
     private final Map<UUID, Long> lastRequest = new ConcurrentHashMap<>();
 
-    public RequestCommand(ProxyServer proxy, Messages messages, ReportRepository reports, YamlConfig config) {
+    public RequestCommand(ProxyServer proxy, Messages messages, ReportRepository reports,
+                          YamlConfig config, Futures futures) {
         this.proxy = proxy;
         this.messages = messages;
         this.reports = reports;
         this.config = config;
+        this.futures = futures;
     }
 
     @Default
+    @Syntax("<motivo>")
+    @Description("Chiede assistenza allo staff.")
     public void onRequest(Player player, @Optional String reason) {
         if (reason == null || reason.isBlank()) {
             player.sendMessage(messages.get("request.usage"));
@@ -55,7 +63,8 @@ public class RequestCommand extends BaseCommand {
                 .orElse("?");
 
         lastRequest.put(player.getUniqueId(), System.currentTimeMillis());
-        reports.saveRequest(player.getUniqueId(), player.getUsername(), reason, server);
+        futures.handle(reports.saveRequest(player.getUniqueId(), player.getUsername(), reason, server),
+                "save request by " + player.getUsername());
 
         player.sendMessage(messages.get("request.sent"));
         Component staffMessage = messages.get("request.staff_format",

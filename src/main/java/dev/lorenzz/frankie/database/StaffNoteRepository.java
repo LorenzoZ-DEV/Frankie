@@ -1,9 +1,8 @@
 package dev.lorenzz.frankie.database;
 
-import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -22,27 +21,28 @@ public class StaffNoteRepository {
 
     public CompletableFuture<Void> add(UUID target, String targetName,
                                        UUID author, String authorName, String note) {
-        return CompletableFuture.runAsync(() -> {
-            try (Connection connection = database.getConnection();
-                 PreparedStatement statement = connection.prepareStatement(
-                         "INSERT INTO frankie_staff_notes (target_uuid, target_name, author_uuid, author_name, note) VALUES (?, ?, ?, ?, ?)")) {
+        return database.update(connection -> {
+            try (PreparedStatement statement = connection.prepareStatement("""
+                    INSERT INTO frankie_staff_notes
+                        (target_uuid, target_name, author_uuid, author_name, note)
+                    VALUES (?, ?, ?, ?, ?)""")) {
                 statement.setString(1, target.toString());
                 statement.setString(2, targetName);
                 statement.setString(3, author.toString());
                 statement.setString(4, authorName);
                 statement.setString(5, note);
                 statement.executeUpdate();
-            } catch (SQLException e) {
-                throw new RuntimeException(e);
             }
         });
     }
 
     public CompletableFuture<List<StaffNote>> getByTarget(UUID target) {
-        return CompletableFuture.supplyAsync(() -> {
-            try (Connection connection = database.getConnection();
-                 PreparedStatement statement = connection.prepareStatement(
-                         "SELECT id, author_name, note, created_at FROM frankie_staff_notes WHERE target_uuid = ? ORDER BY created_at DESC")) {
+        return database.query(connection -> {
+            try (PreparedStatement statement = connection.prepareStatement("""
+                    SELECT id, author_name, note, created_at
+                    FROM frankie_staff_notes
+                    WHERE target_uuid = ?
+                    ORDER BY created_at DESC""")) {
                 statement.setString(1, target.toString());
                 try (ResultSet result = statement.executeQuery()) {
                     List<StaffNote> notes = new ArrayList<>();
@@ -55,12 +55,10 @@ public class StaffNoteRepository {
                     }
                     return notes;
                 }
-            } catch (SQLException e) {
-                throw new RuntimeException(e);
             }
         });
     }
 
-    public record StaffNote(int id, String author, String note, java.time.LocalDateTime createdAt) {
+    public record StaffNote(int id, String author, String note, LocalDateTime createdAt) {
     }
 }

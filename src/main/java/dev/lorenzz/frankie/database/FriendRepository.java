@@ -1,9 +1,7 @@
 package dev.lorenzz.frankie.database;
 
-import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -17,27 +15,38 @@ public class FriendRepository {
         this.database = database;
     }
 
-    public CompletableFuture<Boolean> areFriends(UUID player, UUID other) {
-        return supply(connection -> {
-            try (PreparedStatement statement = connection.prepareStatement(
-                    "SELECT 1 FROM frankie_friends WHERE player_uuid = ? AND friend_uuid = ? LIMIT 1")) {
-                statement.setString(1, player.toString());
-                statement.setString(2, other.toString());
-                try (ResultSet result = statement.executeQuery()) {
-                    return result.next();
-                }
-            }
-        });
-    }
-
-    public CompletableFuture<Integer> countFriends(UUID player) {
-        return supply(connection -> {
-            try (PreparedStatement statement = connection.prepareStatement(
-                    "SELECT COUNT(*) FROM frankie_friends WHERE player_uuid = ?")) {
-                statement.setString(1, player.toString());
+    /**
+     * Everything {@code /friend add} needs to decide what to do, in one round
+     * trip. The command used to chain four separate queries through nested
+     * callbacks, each hopping threads and each able to fail unnoticed.
+     */
+    public CompletableFuture<FriendState> state(UUID player, UUID target) {
+        return database.query(connection -> {
+            try (PreparedStatement statement = connection.prepareStatement("""
+                    SELECT
+                        (SELECT COUNT(*) FROM frankie_friends WHERE player_uuid = ?) AS friend_count,
+                        EXISTS(SELECT 1 FROM frankie_friends
+                               WHERE player_uuid = ? AND friend_uuid = ?) AS are_friends,
+                        EXISTS(SELECT 1 FROM frankie_friend_requests
+                               WHERE sender_uuid = ? AND target_uuid = ?) AS outgoing,
+                        EXISTS(SELECT 1 FROM frankie_friend_requests
+                               WHERE sender_uuid = ? AND target_uuid = ?) AS incoming""")) {
+                String playerId = player.toString();
+                String targetId = target.toString();
+                statement.setString(1, playerId);
+                statement.setString(2, playerId);
+                statement.setString(3, targetId);
+                statement.setString(4, playerId);
+                statement.setString(5, targetId);
+                statement.setString(6, targetId);
+                statement.setString(7, playerId);
                 try (ResultSet result = statement.executeQuery()) {
                     result.next();
-                    return result.getInt(1);
+                    return new FriendState(
+                            result.getInt("friend_count"),
+                            result.getBoolean("are_friends"),
+                            result.getBoolean("outgoing"),
+                            result.getBoolean("incoming"));
                 }
             }
         });
@@ -45,7 +54,7 @@ public class FriendRepository {
 
     /** Friendship stored in both directions so lookups stay single-column. */
     public CompletableFuture<Void> addFriends(UUID player, UUID other) {
-        return supply(connection -> {
+        return database.update(connection -> {
             try (PreparedStatement statement = connection.prepareStatement(
                     "INSERT IGNORE INTO frankie_friends (player_uuid, friend_uuid) VALUES (?, ?), (?, ?)")) {
                 statement.setString(1, player.toString());
@@ -53,15 +62,16 @@ public class FriendRepository {
                 statement.setString(3, other.toString());
                 statement.setString(4, player.toString());
                 statement.executeUpdate();
-                return null;
             }
         });
     }
 
     public CompletableFuture<Boolean> removeFriends(UUID player, UUID other) {
-        return supply(connection -> {
-            try (PreparedStatement statement = connection.prepareStatement(
-                    "DELETE FROM frankie_friends WHERE (player_uuid = ? AND friend_uuid = ?) OR (player_uuid = ? AND friend_uuid = ?)")) {
+        return database.query(connection -> {
+            try (PreparedStatement statement = connection.prepareStatement("""
+                    DELETE FROM frankie_friends
+                    WHERE (player_uuid = ? AND friend_uuid = ?)
+                       OR (player_uuid = ? AND friend_uuid = ?)""")) {
                 statement.setString(1, player.toString());
                 statement.setString(2, other.toString());
                 statement.setString(3, other.toString());
@@ -72,7 +82,7 @@ public class FriendRepository {
     }
 
     public CompletableFuture<List<PlayerRepository.CachedPlayer>> getFriends(UUID player) {
-        return supply(connection -> {
+        return database.query(connection -> {
             try (PreparedStatement statement = connection.prepareStatement("""
                     SELECT f.friend_uuid, COALESCE(p.name, '?') AS name
                     FROM frankie_friends f
@@ -80,21 +90,13 @@ public class FriendRepository {
                     WHERE f.player_uuid = ?
                     ORDER BY name""")) {
                 statement.setString(1, player.toString());
-                try (ResultSet result = statement.executeQuery()) {
-                    List<PlayerRepository.CachedPlayer> friends = new ArrayList<>();
-                    while (result.next()) {
-                        friends.add(new PlayerRepository.CachedPlayer(
-                                UUID.fromString(result.getString("friend_uuid")),
-                                result.getString("name")));
-                    }
-                    return friends;
-                }
+                return readPlayers(statement, "friend_uuid");
             }
         });
     }
 
     public CompletableFuture<Boolean> hasRequest(UUID sender, UUID target) {
-        return supply(connection -> {
+        return database.query(connection -> {
             try (PreparedStatement statement = connection.prepareStatement(
                     "SELECT 1 FROM frankie_friend_requests WHERE sender_uuid = ? AND target_uuid = ? LIMIT 1")) {
                 statement.setString(1, sender.toString());
@@ -107,19 +109,18 @@ public class FriendRepository {
     }
 
     public CompletableFuture<Void> addRequest(UUID sender, UUID target) {
-        return supply(connection -> {
+        return database.update(connection -> {
             try (PreparedStatement statement = connection.prepareStatement(
                     "INSERT IGNORE INTO frankie_friend_requests (sender_uuid, target_uuid) VALUES (?, ?)")) {
                 statement.setString(1, sender.toString());
                 statement.setString(2, target.toString());
                 statement.executeUpdate();
-                return null;
             }
         });
     }
 
     public CompletableFuture<Boolean> removeRequest(UUID sender, UUID target) {
-        return supply(connection -> {
+        return database.query(connection -> {
             try (PreparedStatement statement = connection.prepareStatement(
                     "DELETE FROM frankie_friend_requests WHERE sender_uuid = ? AND target_uuid = ?")) {
                 statement.setString(1, sender.toString());
@@ -130,7 +131,7 @@ public class FriendRepository {
     }
 
     public CompletableFuture<List<PlayerRepository.CachedPlayer>> getIncomingRequests(UUID target) {
-        return supply(connection -> {
+        return database.query(connection -> {
             try (PreparedStatement statement = connection.prepareStatement("""
                     SELECT r.sender_uuid, COALESCE(p.name, '?') AS name
                     FROM frankie_friend_requests r
@@ -138,30 +139,30 @@ public class FriendRepository {
                     WHERE r.target_uuid = ?
                     ORDER BY r.created_at""")) {
                 statement.setString(1, target.toString());
-                try (ResultSet result = statement.executeQuery()) {
-                    List<PlayerRepository.CachedPlayer> requests = new ArrayList<>();
-                    while (result.next()) {
-                        requests.add(new PlayerRepository.CachedPlayer(
-                                UUID.fromString(result.getString("sender_uuid")),
-                                result.getString("name")));
-                    }
-                    return requests;
-                }
+                return readPlayers(statement, "sender_uuid");
             }
         });
     }
 
-    private interface Query<T> {
-        T run(Connection connection) throws SQLException;
+    private static List<PlayerRepository.CachedPlayer> readPlayers(PreparedStatement statement, String uuidColumn)
+            throws java.sql.SQLException {
+        try (ResultSet result = statement.executeQuery()) {
+            List<PlayerRepository.CachedPlayer> players = new ArrayList<>();
+            while (result.next()) {
+                players.add(new PlayerRepository.CachedPlayer(
+                        UUID.fromString(result.getString(uuidColumn)),
+                        result.getString("name")));
+            }
+            return players;
+        }
     }
 
-    private <T> CompletableFuture<T> supply(Query<T> query) {
-        return CompletableFuture.supplyAsync(() -> {
-            try (Connection connection = database.getConnection()) {
-                return query.run(connection);
-            } catch (SQLException e) {
-                throw new RuntimeException(e);
-            }
-        });
+    /**
+     * @param friendCount how many friends the requesting player already has
+     * @param areFriends  the two are already friends
+     * @param outgoing    the player already sent a request to the target
+     * @param incoming    the target already sent a request to the player
+     */
+    public record FriendState(int friendCount, boolean areFriends, boolean outgoing, boolean incoming) {
     }
 }

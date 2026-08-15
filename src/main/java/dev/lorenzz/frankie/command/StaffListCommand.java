@@ -4,22 +4,22 @@ import co.aikar.commands.BaseCommand;
 import co.aikar.commands.annotation.CommandAlias;
 import co.aikar.commands.annotation.CommandPermission;
 import co.aikar.commands.annotation.Default;
+import co.aikar.commands.annotation.Description;
+import com.velocitypowered.api.command.CommandSource;
 import com.velocitypowered.api.proxy.Player;
 import com.velocitypowered.api.proxy.ProxyServer;
 import dev.lorenzz.frankie.config.Messages;
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 
-import java.util.stream.Collectors;
+import java.util.List;
 
-@CommandAlias("slist")
+@CommandAlias("slist|stafflist")
 @CommandPermission("frankie.stafflist")
 public class StaffListCommand extends BaseCommand {
 
+    public static final String PERMISSION_STAFF = "frankie.staff";
+
     private final ProxyServer proxy;
     private final Messages messages;
-
-    private static final LegacyComponentSerializer LEGACY = LegacyComponentSerializer.legacyAmpersand();
 
     public StaffListCommand(ProxyServer proxy, Messages messages) {
         this.proxy = proxy;
@@ -27,29 +27,23 @@ public class StaffListCommand extends BaseCommand {
     }
 
     @Default
-    public void onStaffList(Player player) {
-        var onlineStaff = proxy.getAllPlayers().stream()
-                .filter(p -> p.hasPermission("frankie.staff"))
-                .collect(Collectors.toList());
+    @Description("Mostra i membri dello staff online.")
+    public void onStaffList(CommandSource source) {
+        List<Player> onlineStaff = proxy.getAllPlayers().stream()
+                .filter(player -> player.hasPermission(PERMISSION_STAFF))
+                .toList();
 
         if (onlineStaff.isEmpty()) {
-            player.sendMessage(LEGACY.deserialize(messages.raw("stafflist.empty")));
+            source.sendMessage(messages.get("stafflist.empty"));
             return;
         }
-
-        player.sendMessage(LEGACY.deserialize(messages.raw("stafflist.header")
-                .replace("%count%", String.valueOf(onlineStaff.size()))));
-
-        for (Player p : onlineStaff) {
-            String server = p.getCurrentServer()
-                    .map(s -> s.getServerInfo().getName())
-                    .orElse("unknown");
-
-            String line = messages.raw("stafflist.format")
-                    .replace("%player%", p.getUsername())
-                    .replace("%server%", server);
-
-            player.sendMessage(LEGACY.deserialize(line));
+        source.sendMessage(messages.get("stafflist.header", "%count%", String.valueOf(onlineStaff.size())));
+        for (Player staff : onlineStaff) {
+            source.sendMessage(messages.get("stafflist.format",
+                    "%player%", staff.getUsername(),
+                    "%server%", staff.getCurrentServer()
+                            .map(connection -> connection.getServerInfo().getName())
+                            .orElse("unknown")));
         }
     }
 }

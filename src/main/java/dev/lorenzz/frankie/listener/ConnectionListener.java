@@ -5,52 +5,55 @@ import com.velocitypowered.api.event.connection.DisconnectEvent;
 import com.velocitypowered.api.event.connection.PostLoginEvent;
 import com.velocitypowered.api.event.player.ServerConnectedEvent;
 import com.velocitypowered.api.proxy.Player;
-import com.velocitypowered.api.proxy.ProxyServer;
-import dev.lorenzz.frankie.config.Messages;
-import dev.lorenzz.frankie.database.FriendRepository;
+import dev.lorenzz.frankie.core.FrankieServices;
 import dev.lorenzz.frankie.database.PlayerRepository;
-import dev.lorenzz.frankie.hook.LuckPermsHook;
 import dev.lorenzz.frankie.staffchat.StaffChatManager;
 import net.kyori.adventure.text.Component;
 
 /**
- * Staff join/quit/switch broadcasts, friend online/offline notifications and
- * the uuid/name cache updates.
+ * Staff join/quit/switch broadcasts, friend notifications, the player cache
+ * update and per-player state cleanup.
+ *
+ * <p>This listener is core, not part of the friends module. It used to be
+ * registered only when {@code modules.friends} was on, which silently took the
+ * staff broadcasts and — more importantly — the uuid/name/IP cache down with it;
+ * that cache is what lets the blacklist reach offline accounts.
  */
 public class ConnectionListener {
 
-    private final ProxyServer proxy;
-    private final Messages messages;
-    private final StaffChatManager staffChat;
-    private final FriendRepository friends;
-    private final PlayerRepository players;
-    private final LuckPermsHook luckPerms;
+    private final FrankieServices services;
 
-    public ConnectionListener(ProxyServer proxy, Messages messages, StaffChatManager staffChat,
-                              FriendRepository friends, PlayerRepository players, LuckPermsHook luckPerms) {
-        this.proxy = proxy;
-        this.messages = messages;
-        this.staffChat = staffChat;
-        this.friends = friends;
-        this.players = players;
-        this.luckPerms = luckPerms;
+    public ConnectionListener(FrankieServices services) {
+        this.services = services;
     }
 
+    /**
+     * Records name and address on every login. The address is what lets a
+     * blacklist reach an account that is currently offline.
+     */
     @Subscribe
     public void onPostLogin(PostLoginEvent event) {
-        players.upsert(event.getPlayer().getUniqueId(), event.getPlayer().getUsername());
+        Player player = event.getPlayer();
+        String ip = player.getRemoteAddress() == null || player.getRemoteAddress().getAddress() == null
+                ? null
+                : player.getRemoteAddress().getAddress().getHostAddress();
+        services.futures.handle(
+                services.players.upsert(player.getUniqueId(), player.getUsername(), ip),
+                "player cache upsert for " + player.getUsername());
     }
 
     @Subscribe
     public void onServerConnected(ServerConnectedEvent event) {
         Player player = event.getPlayer();
         String server = event.getServer().getServerInfo().getName();
+        boolean isStaff = player.hasPermission(StaffChatManager.PERMISSION);
 
         if (event.getPreviousServer().isPresent()) {
-            if (player.hasPermission(StaffChatManager.PERMISSION)) {
-                staffChat.broadcastStatus(messages.get("staffchat.staff_switch_message_format",
-                        "%userprefix%", luckPerms.prefix(player),
-                        "%usersuffix%", luckPerms.suffix(player),
+            if (isStaff) {
+                services.staffChat.broadcastStatus(services.messages.get(
+                        "staffchat.staff_switch_message_format",
+                        "%userprefix%", services.luckPerms.prefix(player),
+                        "%usersuffix%", services.luckPerms.suffix(player),
                         "%user%", player.getUsername(),
                         "%serverbefore%", event.getPreviousServer().get().getServerInfo().getName(),
                         "%server%", server));
@@ -58,11 +61,12 @@ public class ConnectionListener {
             return;
         }
 
-        // First server after login: network join.
-        if (player.hasPermission(StaffChatManager.PERMISSION)) {
-            staffChat.broadcastStatus(messages.get("staffchat.staff_join_message_format",
-                    "%userprefix%", luckPerms.prefix(player),
-                    "%usersuffix%", luckPerms.suffix(player),
+        // First server after login: this is the network join.
+        if (isStaff) {
+            services.staffChat.broadcastStatus(services.messages.get(
+                    "staffchat.staff_join_message_format",
+                    "%userprefix%", services.luckPerms.prefix(player),
+                    "%usersuffix%", services.luckPerms.suffix(player),
                     "%user%", player.getUsername(),
                     "%server%", server));
         }
@@ -72,29 +76,38 @@ public class ConnectionListener {
     @Subscribe
     public void onDisconnect(DisconnectEvent event) {
         Player player = event.getPlayer();
-        staffChat.cleanup(player);
+        services.staffChat.cleanup(player);
+        services.privateMessages.cleanup(player.getUniqueId());
+
         if (event.getLoginStatus() != DisconnectEvent.LoginStatus.SUCCESSFUL_LOGIN) {
             return;
         }
         if (player.hasPermission(StaffChatManager.PERMISSION)) {
-            staffChat.broadcastStatus(messages.get("staffchat.staff_quit_message_format",
-                    "%userprefix%", luckPerms.prefix(player),
-                    "%usersuffix%", luckPerms.suffix(player),
+            services.staffChat.broadcastStatus(services.messages.get(
+                    "staffchat.staff_quit_message_format",
+                    "%userprefix%", services.luckPerms.prefix(player),
+                    "%usersuffix%", services.luckPerms.suffix(player),
                     "%user%", player.getUsername()));
         }
         notifyFriends(player, false);
     }
 
     private void notifyFriends(Player player, boolean online) {
-        friends.getFriends(player.getUniqueId()).thenAccept(list -> {
-            if (list.isEmpty()) {
-                return;
-            }
-            Component notification = messages.get(online ? "friend.friend_online" : "friend.friend_offline",
-                    "%user%", player.getUsername());
-            for (PlayerRepository.CachedPlayer friend : list) {
-                proxy.getPlayer(friend.uuid()).ifPresent(target -> target.sendMessage(notification));
-            }
-        });
+        if (!services.module("friends")) {
+            return;
+        }
+        services.futures.handle(services.friends.getFriends(player.getUniqueId()), null,
+                "friend notification for " + player.getUsername(), list -> {
+                    if (list.isEmpty()) {
+                        return;
+                    }
+                    Component notification = services.messages.get(
+                            online ? "friend.friend_online" : "friend.friend_offline",
+                            "%user%", player.getUsername());
+                    for (PlayerRepository.CachedPlayer friend : list) {
+                        services.proxy.getPlayer(friend.uuid())
+                                .ifPresent(target -> target.sendMessage(notification));
+                    }
+                });
     }
 }
