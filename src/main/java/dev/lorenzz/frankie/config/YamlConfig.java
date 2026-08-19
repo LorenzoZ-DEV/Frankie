@@ -1,9 +1,11 @@
 package dev.lorenzz.frankie.config;
 
+import org.slf4j.Logger;
 import org.yaml.snakeyaml.Yaml;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collections;
@@ -11,6 +13,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * Simple YAML wrapper with dotted-path lookups. The default file is copied
@@ -24,32 +27,90 @@ import java.util.Map;
 public class YamlConfig {
 
     private final Path file;
+    /** Name of the packaged default, kept to top the file up on every load. */
+    private final String resource;
+    private final Logger logger;
     private volatile Map<String, Object> values;
 
-    private YamlConfig(Path file, Map<String, Object> root) {
+    private YamlConfig(Path file, String resource, Logger logger, Map<String, Object> root) {
         this.file = file;
+        this.resource = resource;
+        this.logger = logger;
         this.values = flatten(root);
     }
 
     public static YamlConfig load(Path dataDirectory, String fileName) throws IOException {
+        return load(dataDirectory, fileName, null);
+    }
+
+    public static YamlConfig load(Path dataDirectory, String fileName, Logger logger) throws IOException {
         Files.createDirectories(dataDirectory);
         Path file = dataDirectory.resolve(fileName);
         if (Files.notExists(file)) {
-            try (InputStream in = YamlConfig.class.getClassLoader().getResourceAsStream(fileName)) {
+            try (InputStream in = defaults(fileName)) {
                 if (in == null) {
                     throw new IOException("Default resource " + fileName + " not found in jar");
                 }
                 Files.copy(in, file);
             }
+        } else {
+            sync(file, fileName, logger);
         }
-        return new YamlConfig(file, read(file));
+        return new YamlConfig(file, fileName, logger, read(file));
     }
 
     /** Re-reads the file from disk. On failure the old values stay active. */
     public void reload() throws IOException {
+        sync(file, resource, logger);
         // Flatten before publishing: a half-built map must never be visible.
         Map<String, Object> reloaded = flatten(read(file));
         this.values = reloaded;
+    }
+
+    /**
+     * Writes into the operator's file the keys this build's default has and
+     * theirs does not, comments included. Their own values are never touched;
+     * see {@link ConfigMerger}.
+     *
+     * <p>Best effort by design: a file that cannot be topped up is still a file
+     * the plugin can read, and the Java-side defaults cover every option. It is
+     * logged and the boot continues.
+     */
+    private static void sync(Path file, String resource, Logger logger) {
+        if (resource == null) {
+            return;
+        }
+        try {
+            String packaged = defaultsText(resource);
+            if (packaged == null) {
+                return;
+            }
+            String current = Files.readString(file, StandardCharsets.UTF_8);
+            Optional<ConfigMerger.Result> merged = ConfigMerger.merge(current, packaged);
+            if (merged.isEmpty()) {
+                return;
+            }
+            Files.writeString(file, merged.get().text(), StandardCharsets.UTF_8);
+            if (logger != null) {
+                logger.info("{}: added {} missing entries from this version's defaults ({})",
+                        resource, merged.get().added().size(), String.join(", ", merged.get().added()));
+            }
+        } catch (Exception e) {
+            if (logger != null) {
+                logger.warn("{} could not be updated with the new default entries, "
+                        + "add them by hand if you want to change them", resource, e);
+            }
+        }
+    }
+
+    private static InputStream defaults(String fileName) {
+        return YamlConfig.class.getClassLoader().getResourceAsStream(fileName);
+    }
+
+    private static String defaultsText(String fileName) throws IOException {
+        try (InputStream in = defaults(fileName)) {
+            return in == null ? null : new String(in.readAllBytes(), StandardCharsets.UTF_8);
+        }
     }
 
     private static Map<String, Object> read(Path file) throws IOException {

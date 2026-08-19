@@ -9,6 +9,8 @@ repositories {
     maven("https://repo.papermc.io/repository/maven-public/")
     maven("https://repo.aikar.co/content/groups/aikar/")
     maven("https://repo.nickuc.com/maven-releases/")
+    // LiteBans API (ban/mute/kick/warn letti da /check).
+    maven("https://repo.codemc.org/repository/maven-public/")
 }
 
 dependencies {
@@ -24,6 +26,11 @@ dependencies {
 
     // nLogin API
     compileOnly("com.nickuc.login:api:10.4")
+
+    // LiteBans API: fornita a runtime dal plugin LiteBans installato sul proxy,
+    // quindi compileOnly. Frankie funziona anche senza (il /check mostra solo
+    // la blacklist).
+    compileOnly("litebans:api:0.6.1")
 
     // compileOnly non finisce sul classpath dei test: va ridichiarato.
     testImplementation("com.velocitypowered:velocity-api:3.5.0-SNAPSHOT")

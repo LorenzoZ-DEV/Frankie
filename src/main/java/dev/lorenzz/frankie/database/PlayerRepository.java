@@ -2,6 +2,8 @@ package dev.lorenzz.frankie.database;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.Timestamp;
+import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -57,6 +59,32 @@ public class PlayerRepository {
         });
     }
 
+    /**
+     * Everything the cache knows about one account, for the {@code /check}
+     * summary screen: an offline player has no address nor last-seen date
+     * anywhere else.
+     */
+    public CompletableFuture<Optional<PlayerProfile>> findProfile(UUID uuid) {
+        return database.query(connection -> {
+            try (PreparedStatement statement = connection.prepareStatement(
+                    "SELECT uuid, name, last_ip, last_seen FROM frankie_players WHERE uuid = ?")) {
+                statement.setString(1, uuid.toString());
+                try (ResultSet result = statement.executeQuery()) {
+                    if (!result.next()) {
+                        return Optional.<PlayerProfile>empty();
+                    }
+                    String ip = result.getString("last_ip");
+                    Timestamp seen = result.getTimestamp("last_seen");
+                    return Optional.of(new PlayerProfile(
+                            UUID.fromString(result.getString("uuid")),
+                            result.getString("name"),
+                            ip == null ? "" : ip,
+                            seen == null ? null : seen.toLocalDateTime()));
+                }
+            }
+        });
+    }
+
     /** Last IP seen for a player name, used to blacklist offline accounts. */
     public CompletableFuture<Optional<String>> lastIpByName(String name) {
         return database.query(connection -> {
@@ -75,5 +103,9 @@ public class PlayerRepository {
     }
 
     public record CachedPlayer(UUID uuid, String name) {
+    }
+
+    /** A cache row in full; {@code lastIp} is empty and {@code lastSeen} null when unknown. */
+    public record PlayerProfile(UUID uuid, String name, String lastIp, LocalDateTime lastSeen) {
     }
 }

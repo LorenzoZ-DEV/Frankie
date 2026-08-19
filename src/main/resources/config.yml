@@ -52,6 +52,34 @@ blacklist:
     # database a ogni click. Ogni blacklist/unblacklist la invalida comunque.
     cache-seconds: 15
 
+# Scheda giocatore (/check, alias /c e /calts).
+# Ban, mute, kick e warn vengono letti dall'API di LiteBans (installalo sul
+# proxy); la sezione blacklist usa il sistema di Frankie. Senza LiteBans il
+# comando continua a funzionare e mostra solo la blacklist.
+# L'inventario viene aperto dal plugin FrankieBackend sul server dove si trova
+# lo staffer: i testi e gli item stanno nel suo config.yml (sezione check-gui).
+#
+# Permessi: frankie.check per aprire, frankie.check.revoke per revocare.
+check:
+  gui:
+    # Voci per pagina, massimo 45 (l'ultima riga e' la navigazione).
+    page-size: 45
+    # Quante voci leggere per categoria. Oltre questo numero la cronologia
+    # viene troncata (le piu' recenti restano).
+    max-entries: 180
+
+  revoke:
+    # Comandi eseguiti dalla console per togliere ban e mute. Devono essere
+    # quelli di LiteBans: scrivere direttamente sul suo database lascerebbe il
+    # mute attivo in memoria fino al refresh della cache.
+    # Placeholder: %target% (nome o IP colpito dalla punizione) %reason%
+    ban-command: "unban %target% %reason%"
+    mute-command: "unmute %target% %reason%"
+    # LiteBans registra la rimozione sul suo thread: prima di rileggere la riga
+    # e ridisegnare la GUI si aspettano questi millisecondi. Alzalo se dopo un
+    # click la punizione risulta ancora attiva.
+    refresh-delay-millis: 400
+
 # Filtro parolacce (/antiswear).
 # Il filtro lavora in tre passaggi, dal piu' economico al piu' costoso:
 #   1. la lista scritta a mano in messages.yml (antiswear.words)
@@ -107,3 +135,4 @@ modules:
   stafflist: true
   antiswear: true
   blacklist: true
+  check: true

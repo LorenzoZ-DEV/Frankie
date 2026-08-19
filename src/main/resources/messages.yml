@@ -198,6 +198,34 @@
     list_entry: '&8 • &f%victim% &7(&f%times%x&7) &8- &7%reason% &8- &7da &f%executor% &8- &7%date% &8- &7%ip%'
     list_empty: '%prefix% &7Nessun giocatore è attualmente in blacklist.'
 
+  # /check (alias /c e /calts) — scheda punizioni di un giocatore.
+  # La GUI viene aperta dal plugin FrankieBackend sul server dove si trova lo
+  # staffer; i testi degli item stanno nel config.yml di FrankieBackend.
+  # Ban, mute, kick e warn arrivano da LiteBans, la blacklist da Frankie.
+  check:
+
+    prefix: "&#38BDF8&lᴄʜᴇᴄᴋ &#3F3F46&l•"
+
+    usage: '%prefix% &7Utilizzo: &f/check <giocatore>'
+    opening: '%prefix% &7Apertura della scheda di &f%target%&7...'
+    no_server: '%prefix% &cDevi essere collegato a un server per aprire la scheda.'
+    unknown: '%prefix% &c%target% &7non ha mai effettuato l''accesso.'
+    no_permission: '%prefix% &cNon hai il permesso di revocare le punizioni.'
+
+    # Motivazione scritta nella punizione revocata: e' quella che la GUI mostra
+    # poi nella lore "Motivazione".
+    revoke_reason: 'Revocata da %staff% tramite /check'
+    revoked: '%prefix% &aRevocato il &f%type% &adi &f%target%&a.'
+    revoke_gone: '%prefix% &7Quella punizione non è più attiva.'
+    revoke_failed: '%prefix% &cRevoca fallita. Controlla la console.'
+
+    # Usati solo dalla console, che non ha inventari.
+    text_header: '%prefix% &7Scheda di &f%target% &8(&7%uuid% &8• &7%ip%&8)'
+    text_line: '&8 • &f%type%&7: &f%total% &8(&7attivo: %active%&8)'
+    # Virgolette obbligatorie: in YAML yes/no senza virgolette sono booleani.
+    "yes": '&asì'
+    "no": '&cno'
+
   global:
     usage: "&8[&d&l✦&8] &7Utilizzo: &f/global <messaggio>"
     format: "&8[&d&l✦&8] &d&lGLOBAL &8┃ &f%player% &8• &b%server% &8┃ &f%message%"

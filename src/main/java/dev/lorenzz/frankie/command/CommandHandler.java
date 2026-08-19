@@ -7,6 +7,8 @@ import dev.lorenzz.frankie.blacklist.BlacklistBrowser;
 import dev.lorenzz.frankie.blacklist.BlacklistCommand;
 import dev.lorenzz.frankie.blacklist.BlacklistUsersCommand;
 import dev.lorenzz.frankie.blacklist.UnblacklistCommand;
+import dev.lorenzz.frankie.check.CheckCommand;
+import dev.lorenzz.frankie.check.CheckService;
 import dev.lorenzz.frankie.core.FrankieServices;
 import dev.lorenzz.frankie.friend.FriendCommand;
 import dev.lorenzz.frankie.report.ReportCommand;
@@ -74,6 +76,11 @@ public class CommandHandler {
                     services.logger));
             commands.registerCommand(new BlacklistUsersCommand(services.blacklistBrowser,
                     services.messages, services.futures));
+        }
+        if (services.module("check")) {
+            // Like the blacklist menu, the GUI lives on the backend companion.
+            services.proxy.getChannelRegistrar().register(CheckService.CHANNEL);
+            commands.registerCommand(new CheckCommand(services.check, services.messages));
         }
         if (services.module("privatemessages")) {
             commands.registerCommand(new MsgCommand(

@@ -33,6 +33,10 @@ public class ModuleManager {
             events.register(services.plugin, services.blacklistBrowser);
             services.blacklistGuard.load();
         }
+        if (services.module("check")) {
+            // Serves the backend companion's /check GUI over the plugin channel.
+            events.register(services.plugin, services.check);
+        }
         // Previously registered unconditionally, so the toggle only stopped the
         // filtering while the listener still rewrote every chat message.
         if (services.module("antiswear")) {

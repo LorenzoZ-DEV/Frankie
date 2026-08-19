@@ -21,7 +21,9 @@ import java.nio.file.Path;
 @Plugin(id = "frankie", name = "Frankie", version = "1.0.1",
         dependencies = {
                 @Dependency(id = "luckperms", optional = true),
-                @Dependency(id = "nlogin", optional = true)
+                @Dependency(id = "nlogin", optional = true),
+                // Declared so LiteBans is up before /check queries its API.
+                @Dependency(id = "litebans", optional = true)
         })
 public class Frankie {
 
@@ -46,8 +48,10 @@ public class Frankie {
         YamlConfig config;
         YamlConfig messagesConfig;
         try {
-            config = YamlConfig.load(dataDirectory, "config.yml");
-            messagesConfig = YamlConfig.load(dataDirectory, "messages.yml");
+            // The logger is passed so the operator sees which entries this
+            // version added to their files.
+            config = YamlConfig.load(dataDirectory, "config.yml", logger);
+            messagesConfig = YamlConfig.load(dataDirectory, "messages.yml", logger);
         } catch (Exception e) {
             logger.error("Failed to load configuration, Frankie is disabled", e);
             return;
