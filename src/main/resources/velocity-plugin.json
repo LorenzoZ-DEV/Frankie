@@ -2,7 +2,7 @@
   "id": "frankie",
   "name": "Frankie",
   "version": "${version}",
-  "description": "Proxy core: staffchat, amici, report, note staff, teleport, messaggi privati e blacklist.",
+  "description": "Proxy core: staffchat/adminchat/developerchat, amici, report, note staff, teleport, messaggi privati e blacklist.",
   "authors": ["Lorenzzz"],
   "main": "dev.lorenzz.frankie.Frankie",
   "dependencies": [

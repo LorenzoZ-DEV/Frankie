@@ -42,6 +42,53 @@ blacklist:
   # mode), dove il nome e' l'identita'. Su server premium mettilo a false: un
   # nome rilasciato puo' essere ripreso da una persona estranea al ban.
   block-by-name: true
+  # Blocco a livello di firewall della VPS (iptables).
+  #
+  # Il proxy Velocity gira sull'host, fuori da Docker/Pterodactyl, quindi puo'
+  # far cadere la connessione di un IP blacklistato prima ancora che arrivi a
+  # Velocity: un kick costa comunque handshake, slot e righe di log a ogni
+  # tentativo, una regola iptables costa una lookup nel kernel.
+  #
+  # PRIMA DI ATTIVARLO: il proxy non gira da root. Dai il permesso con una riga
+  # in /etc/sudoers.d/frankie (visudo!), sostituendo l'utente del servizio:
+  #   frankie ALL=(root) NOPASSWD: /usr/sbin/iptables, /usr/sbin/ip6tables, /usr/sbin/netfilter-persistent
+  # Le regole finiscono in una catena dedicata (%chain%), separata da quelle di
+  # sistema: "sudo iptables -nL FRANKIE-BLACKLIST" le mostra tutte, e
+  # "sudo iptables -F FRANKIE-BLACKLIST" le azzera senza toccare il resto.
+  #
+  # Il database resta la blacklist vera: se un comando fallisce viene scritto in
+  # console e il ban resta comunque attivo sul proxy.
+  firewall:
+    enabled: false
+    # Shell usata per eseguire i comandi (serve per gli || di idempotenza).
+    shell: "/bin/sh"
+    # Catena dedicata alle regole di Frankie.
+    chain: "FRANKIE-BLACKLIST"
+    # Oltre questi secondi il comando viene ucciso.
+    timeout-seconds: 10
+    # Placeholder disponibili:
+    #   %iptables% -> iptables oppure ip6tables, in base all'indirizzo
+    #   %chain%    -> la catena qui sopra
+    #   %ip%       -> l'indirizzo (validato: solo IP letterali, mai nomi)
+    #
+    # Eseguiti all'avvio del proxy, una volta per IPv4 e una per IPv6: creano la
+    # catena e la agganciano a INPUT solo se non c'e' gia'.
+    setup:
+      - "sudo %iptables% -nL %chain% >/dev/null 2>&1 || sudo %iptables% -N %chain%"
+      - "sudo %iptables% -C INPUT -j %chain% >/dev/null 2>&1 || sudo %iptables% -I INPUT 1 -j %chain%"
+    # Eseguiti a ogni /blacklist e per ogni IP gia' in lista all'avvio: devono
+    # essere idempotenti, altrimenti la catena si riempie di doppioni.
+    add:
+      - "sudo %iptables% -C %chain% -s %ip% -j DROP >/dev/null 2>&1 || sudo %iptables% -A %chain% -s %ip% -j DROP"
+    # Eseguiti a ogni /unblacklist.
+    remove:
+      - "sudo %iptables% -D %chain% -s %ip% -j DROP >/dev/null 2>&1 || true"
+    # Eseguiti dopo ogni modifica, per far sopravvivere le regole al riavvio
+    # della VPS. Esempio: - "sudo netfilter-persistent save"
+    # Lasciando la lista vuota non cambia nulla: all'avvio il proxy riscrive
+    # comunque tutte le regole leggendole dal database.
+    persist: []
+
   # GUI di /blacklistusers. L'inventario viene aperto dal plugin FrankieBackend
   # sul server dove si trova il giocatore; qui si configura solo cosa manda il
   # proxy. I testi e gli item stanno nel config.yml di FrankieBackend.
@@ -124,7 +171,14 @@ antiswear:
 
 # Moduli di Frankie (attivabili/disattivabili)
 modules:
+  # Le tre chat riservate: /sc, /ac e /dc. Funzionano allo stesso modo e hanno
+  # permessi separati (frankie.staffchat, frankie.adminchat, frankie.developerchat).
+  # NOTA: /sc talk (e i suoi equivalenti) richiede FrankieBackend sui server.
+  # Dai client 1.19.1 in poi la chat e' firmata e il proxy non puo' annullarla:
+  # e' il backend a toglierla dalla chat pubblica e a rimandarla al proxy.
   staffchat: true
+  adminchat: true
+  developerchat: true
   reports: true
   requests: true
   friends: true

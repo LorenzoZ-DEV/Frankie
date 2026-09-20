@@ -42,9 +42,13 @@
     prefix: "&#7B2FBE&lꜱᴛᴀꜰꜰ &#3F3F46&l•"
     arguments: "%prefix% &#B6B6C2ᴜꜱᴀ &#C77DFF/ꜱᴄ <ᴍᴇꜱꜱᴀɢɢɪᴏ>&#B6B6C2."
 
-    # Messaggi talk della StaffChat. (NOTA: i client 1.19+ non lo supportano su Velocity)
+    # Messaggi talk della StaffChat.
+    # Dai client 1.19.1 in poi la chat e' firmata: a toglierla dalla chat
+    # pubblica e' FrankieBackend sul server dove si trova il giocatore, non il
+    # proxy. Se manca, parte staffchat_talk_warning.
     staffchat_talk_enabled: "%prefix% &#B6B6C2ᴏʀᴀ ɪ ᴛᴜᴏɪ ᴍᴇꜱꜱᴀɢɢɪ ᴠᴇʀʀᴀɴɴᴏ ɪɴᴠɪᴀᴛɪ ɴᴇʟʟᴀ &#4ADE80ꜱᴛᴀꜰꜰᴄʜᴀᴛ&#B6B6C2."
     staffchat_talk_disabled: "%prefix% &#B6B6C2ᴏʀᴀ ɪ ᴛᴜᴏɪ ᴍᴇꜱꜱᴀɢɢɪ ᴠᴇʀʀᴀɴɴᴏ ɪɴᴠɪᴀᴛɪ ɴᴇʟʟᴀ &#4ADE80ᴄʜᴀᴛ&#B6B6C2."
+    staffchat_talk_warning: "%prefix% &#FACC15ᴀᴛᴛᴇɴᴢɪᴏɴᴇ&#B6B6C2: ꜱᴜ ϙᴜᴇꜱᴛᴏ ꜱᴇʀᴠᴇʀ ᴍᴀɴᴄᴀ &#C77DFFꜰʀᴀɴᴋɪᴇʙᴀᴄᴋᴇɴᴅ&#B6B6C2, ɪ ᴛᴜᴏɪ ᴍᴇꜱꜱᴀɢɢɪ ꜰɪɴɪʀᴀɴɴᴏ ɪɴ ᴄʜᴀᴛ ᴘᴜʙʙʟɪᴄᴀ."
 
     # Messaggi mute della StaffChat.
     staffchat_muted: "%prefix% &#B6B6C2ʟᴀ ꜱᴛᴀꜰꜰᴄʜᴀᴛ è ꜱᴛᴀᴛᴀ &#4ADE80ꜱɪʟᴇɴᴢɪᴀᴛᴀ&#B6B6C2."
@@ -62,6 +66,46 @@
     staff_quit_message_format: "%prefix% &#C77DFF%userprefix%%user% &#B6B6C2è uscito dal Network"
 
     staff_switch_message_format: "%prefix% &#B6B6C2%userprefix%%user% &#3F3F46(&#C77DFF%serverbefore% &#FACC15➜ &#C77DFF%server%&#3F3F46)"
+
+  # /adminchat (alias /ac) — stessa meccanica della staffchat, stanza separata.
+  # Permessi: frankie.adminchat, frankie.adminchat.mute, frankie.adminchat.mute.bypass
+  adminchat:
+
+    prefix: "&#EF4444&lᴀᴅᴍɪɴ &#3F3F46&l•"
+    arguments: "%prefix% &#B6B6C2ᴜꜱᴀ &#C77DFF/ᴀᴄ <ᴍᴇꜱꜱᴀɢɢɪᴏ>&#B6B6C2."
+
+    adminchat_talk_enabled: "%prefix% &#B6B6C2ᴏʀᴀ ɪ ᴛᴜᴏɪ ᴍᴇꜱꜱᴀɢɢɪ ᴠᴇʀʀᴀɴɴᴏ ɪɴᴠɪᴀᴛɪ ɴᴇʟʟᴀ &#4ADE80ᴀᴅᴍɪɴᴄʜᴀᴛ&#B6B6C2."
+    adminchat_talk_disabled: "%prefix% &#B6B6C2ᴏʀᴀ ɪ ᴛᴜᴏɪ ᴍᴇꜱꜱᴀɢɢɪ ᴠᴇʀʀᴀɴɴᴏ ɪɴᴠɪᴀᴛɪ ɴᴇʟʟᴀ &#4ADE80ᴄʜᴀᴛ&#B6B6C2."
+    adminchat_talk_warning: "%prefix% &#FACC15ᴀᴛᴛᴇɴᴢɪᴏɴᴇ&#B6B6C2: ꜱᴜ ϙᴜᴇꜱᴛᴏ ꜱᴇʀᴠᴇʀ ᴍᴀɴᴄᴀ &#C77DFFꜰʀᴀɴᴋɪᴇʙᴀᴄᴋᴇɴᴅ&#B6B6C2, ɪ ᴛᴜᴏɪ ᴍᴇꜱꜱᴀɢɢɪ ꜰɪɴɪʀᴀɴɴᴏ ɪɴ ᴄʜᴀᴛ ᴘᴜʙʙʟɪᴄᴀ."
+
+    adminchat_muted: "%prefix% &#B6B6C2ʟ'ᴀᴅᴍɪɴᴄʜᴀᴛ è ꜱᴛᴀᴛᴀ &#4ADE80ꜱɪʟᴇɴᴢɪᴀᴛᴀ&#B6B6C2."
+    adminchat_unmuted: "%prefix% &#B6B6C2ʟ'ᴀᴅᴍɪɴᴄʜᴀᴛ è ꜱᴛᴀᴛᴀ &#4ADE80ʀɪᴀᴛᴛɪᴠᴀᴛᴀ&#B6B6C2."
+
+    adminchat_toggled_on: "%prefix% &#B6B6C2ʟ'ᴀᴅᴍɪɴᴄʜᴀᴛ è ᴏʀᴀ &#4ADE80ᴠɪꜱɪʙɪʟᴇ&#B6B6C2."
+    adminchat_toggled_off: "%prefix% &#B6B6C2ʟ'ᴀᴅᴍɪɴᴄʜᴀᴛ è ᴏʀᴀ &#4ADE80ɪɴᴠɪꜱɪʙɪʟᴇ&#B6B6C2."
+
+    adminchat_format: "%prefix% &#B6B6C2%userprefix%%user% &#3F3F46» &e%message%"
+    adminchat_console_format: "%prefix% &#B6B6C2%user% &#3F3F46» &#B6B6C2%message%"
+
+  # /developerchat (alias /devchat e /dc) — stanza dei developer.
+  # Permessi: frankie.developerchat, frankie.developerchat.mute, frankie.developerchat.mute.bypass
+  developerchat:
+
+    prefix: "&#38BDF8&lᴅᴇᴠ &#3F3F46&l•"
+    arguments: "%prefix% &#B6B6C2ᴜꜱᴀ &#C77DFF/ᴅᴄ <ᴍᴇꜱꜱᴀɢɢɪᴏ>&#B6B6C2."
+
+    developerchat_talk_enabled: "%prefix% &#B6B6C2ᴏʀᴀ ɪ ᴛᴜᴏɪ ᴍᴇꜱꜱᴀɢɢɪ ᴠᴇʀʀᴀɴɴᴏ ɪɴᴠɪᴀᴛɪ ɴᴇʟʟᴀ &#4ADE80ᴅᴇᴠᴇʟᴏᴘᴇʀᴄʜᴀᴛ&#B6B6C2."
+    developerchat_talk_disabled: "%prefix% &#B6B6C2ᴏʀᴀ ɪ ᴛᴜᴏɪ ᴍᴇꜱꜱᴀɢɢɪ ᴠᴇʀʀᴀɴɴᴏ ɪɴᴠɪᴀᴛɪ ɴᴇʟʟᴀ &#4ADE80ᴄʜᴀᴛ&#B6B6C2."
+    developerchat_talk_warning: "%prefix% &#FACC15ᴀᴛᴛᴇɴᴢɪᴏɴᴇ&#B6B6C2: ꜱᴜ ϙᴜᴇꜱᴛᴏ ꜱᴇʀᴠᴇʀ ᴍᴀɴᴄᴀ &#C77DFFꜰʀᴀɴᴋɪᴇʙᴀᴄᴋᴇɴᴅ&#B6B6C2, ɪ ᴛᴜᴏɪ ᴍᴇꜱꜱᴀɢɢɪ ꜰɪɴɪʀᴀɴɴᴏ ɪɴ ᴄʜᴀᴛ ᴘᴜʙʙʟɪᴄᴀ."
+
+    developerchat_muted: "%prefix% &#B6B6C2ʟᴀ ᴅᴇᴠᴇʟᴏᴘᴇʀᴄʜᴀᴛ è ꜱᴛᴀᴛᴀ &#4ADE80ꜱɪʟᴇɴᴢɪᴀᴛᴀ&#B6B6C2."
+    developerchat_unmuted: "%prefix% &#B6B6C2ʟᴀ ᴅᴇᴠᴇʟᴏᴘᴇʀᴄʜᴀᴛ è ꜱᴛᴀᴛᴀ &#4ADE80ʀɪᴀᴛᴛɪᴠᴀᴛᴀ&#B6B6C2."
+
+    developerchat_toggled_on: "%prefix% &#B6B6C2ʟᴀ ᴅᴇᴠᴇʟᴏᴘᴇʀᴄʜᴀᴛ è ᴏʀᴀ &#4ADE80ᴠɪꜱɪʙɪʟᴇ&#B6B6C2."
+    developerchat_toggled_off: "%prefix% &#B6B6C2ʟᴀ ᴅᴇᴠᴇʟᴏᴘᴇʀᴄʜᴀᴛ è ᴏʀᴀ &#4ADE80ɪɴᴠɪꜱɪʙɪʟᴇ&#B6B6C2."
+
+    developerchat_format: "%prefix% &#B6B6C2%userprefix%%user% &#3F3F46» &e%message%"
+    developerchat_console_format: "%prefix% &#B6B6C2%user% &#3F3F46» &#B6B6C2%message%"
 
   report:
 

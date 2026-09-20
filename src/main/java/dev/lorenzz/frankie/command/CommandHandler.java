@@ -13,6 +13,10 @@ import dev.lorenzz.frankie.core.FrankieServices;
 import dev.lorenzz.frankie.friend.FriendCommand;
 import dev.lorenzz.frankie.report.ReportCommand;
 import dev.lorenzz.frankie.request.RequestCommand;
+import dev.lorenzz.frankie.staffchat.AdminChatCommand;
+import dev.lorenzz.frankie.staffchat.ChannelChat;
+import dev.lorenzz.frankie.staffchat.DeveloperChatCommand;
+import dev.lorenzz.frankie.staffchat.StaffChannel;
 import dev.lorenzz.frankie.staffchat.StaffChatCommand;
 import dev.lorenzz.frankie.staffnotes.StaffNotesCommand;
 import dev.lorenzz.frankie.teleport.GotoCommand;
@@ -37,7 +41,13 @@ public class CommandHandler {
         commands.registerCommand(new FrankieCommand(services));
 
         if (services.module("staffchat")) {
-            commands.registerCommand(new StaffChatCommand(services.staffChat, services.messages));
+            commands.registerCommand(new StaffChatCommand(channelChat(StaffChannel.STAFF)));
+        }
+        if (services.module("adminchat")) {
+            commands.registerCommand(new AdminChatCommand(channelChat(StaffChannel.ADMIN)));
+        }
+        if (services.module("developerchat")) {
+            commands.registerCommand(new DeveloperChatCommand(channelChat(StaffChannel.DEVELOPER)));
         }
         if (services.module("reports")) {
             commands.registerCommand(new ReportCommand(
@@ -95,6 +105,10 @@ public class CommandHandler {
         if (services.module("stafflist")) {
             commands.registerCommand(new StaffListCommand(services.proxy, services.messages));
         }
+    }
+
+    private ChannelChat channelChat(StaffChannel channel) {
+        return new ChannelChat(channel, services.staffChat, services.chatChannels, services.messages);
     }
 
     private void registerCompletions(VelocityCommandManager commands) {

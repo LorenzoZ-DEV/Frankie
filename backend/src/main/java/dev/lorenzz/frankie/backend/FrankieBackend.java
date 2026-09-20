@@ -7,6 +7,7 @@ import dev.lorenzz.frankie.backend.blacklist.BlacklistProtocol;
 import dev.lorenzz.frankie.backend.blacklist.MenuStyle;
 import dev.lorenzz.frankie.backend.check.CheckBridge;
 import dev.lorenzz.frankie.backend.check.CheckProtocol;
+import dev.lorenzz.frankie.backend.chat.ChatChannelBridge;
 import dev.lorenzz.frankie.backend.check.CheckStyle;
 import dev.lorenzz.frankie.backend.teleport.TeleportBridge;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -18,7 +19,9 @@ import org.bukkit.plugin.java.JavaPlugin;
  * <ul>
  *   <li>teleport a player onto another player ({@code frankie:tpto}),</li>
  *   <li>open and drive the blacklist inventory ({@code frankie:blacklist}),</li>
- *   <li>open and drive the /check inventory ({@code frankie:check}).</li>
+ *   <li>open and drive the /check inventory ({@code frankie:check}),</li>
+ *   <li>filter and redirect chat, which on 1.19.1+ is signed and therefore out
+ *       of the proxy's reach ({@code frankie:antiswear}, {@code frankie:chat}).</li>
  * </ul>
  */
 public class FrankieBackend extends JavaPlugin {
@@ -46,6 +49,13 @@ public class FrankieBackend extends JavaPlugin {
         getServer().getMessenger().registerOutgoingPluginChannel(this, CheckProtocol.CHANNEL);
         getServer().getPluginManager().registerEvents(check, this);
 
+        // Talk mode of staff/admin/developer chat: the proxy cannot cancel a
+        // signed message, so the redirect happens here.
+        ChatChannelBridge chat = new ChatChannelBridge(this);
+        getServer().getMessenger().registerIncomingPluginChannel(this, ChatChannelBridge.CHANNEL, chat);
+        getServer().getMessenger().registerOutgoingPluginChannel(this, ChatChannelBridge.CHANNEL);
+        getServer().getPluginManager().registerEvents(chat, this);
+
         AntiSwearGuard antiSwear = new AntiSwearGuard(this);
         getServer().getMessenger().registerIncomingPluginChannel(
                 this, AntiSwearGuard.CHANNEL, antiSwear);
@@ -58,7 +68,7 @@ public class FrankieBackend extends JavaPlugin {
 
         // Says plainly that this build is the one running: "nothing appears in
         // the log" is otherwise indistinguishable from an old jar still loaded.
-        getLogger().info("FrankieBackend attivo (canali: tpto, blacklist, check, antiswear).");
+        getLogger().info("FrankieBackend attivo (canali: tpto, blacklist, check, antiswear, chat).");
     }
 
     @Override
