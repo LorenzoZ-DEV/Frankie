@@ -1,0 +1,346 @@
+#                       F R A N K I E   B A C K E N D
+#                            Developed by Lorenzzz
+#
+# Questo plugin va installato sui server (Paper/Spigot) dietro al proxy.
+# Non ha comandi propri: esegue cio' che il proxy non puo' fare da solo.
+#
+# Colori: codici legacy (&a, &l, ...) e hex (&#RRGGBB).
+
+# Filtro parolacce.
+# La lista delle parole arriva dal proxy e non si configura qui: si modifica
+# con /antiswear sul proxy, oppure in messages.yml (antiswear.words).
+#
+# Perche' il filtro sta qui e non sul proxy: dai client 1.19.1 in poi la chat e'
+# firmata dal client, e un proxy che la riscrive o la blocca fa espellere il
+# giocatore per violazione di protocollo. Il proxy rileva e avvisa lo staff, il
+# server esegue. Anche la scelta censura/blocco arriva dal proxy (antiswear.action).
+antiswear:
+  # Messaggio mostrato a chi scrive una parola non consentita.
+  blocked: "&8[&c&l✘&8] &cIl tuo messaggio contiene parole non consentite."
+
+  # Filtra anche il vecchio evento AsyncPlayerChatEvent, per plugin di chat
+  # scritti prima dell'API Adventure. Attivalo SOLO se il tuo plugin di chat
+  # non viene filtrato: il solo fatto di ascoltare quell'evento fa si' che
+  # Paper lo generi per ogni messaggio del server, anche per gli altri plugin.
+  legacy-chat-event: false
+
+# GUI di /blacklistusers. I dati arrivano dal proxy, qui si configura solo
+# l'aspetto. Per ogni voce puoi cambiare "material", "name" e "lore".
+blacklist-gui:
+
+  # Formato delle date mostrate negli item.
+  date-format: "dd/MM/yyyy HH:mm"
+  # Testo usato quando una data non e' disponibile.
+  unknown-date: "sconosciuta"
+
+  # Riempimento della riga di navigazione (ultima riga).
+  filler:
+    enabled: true
+    material: BLACK_STAINED_GLASS_PANE
+
+  list:
+    # Placeholder: %page% %pages% %total%
+    title: "&#EF4444Blacklist &7(%page%/%pages%)"
+
+    # Un giocatore in blacklist, mostrato con la sua testa.
+    # Placeholder: %victim% %suffix% %reason% %issuer% %ip% %date% %first% %times%
+    entry:
+      name: "&c&l%victim%"
+      lore:
+        - "&8&m----------------------"
+        - "&7Motivo: &f%reason%"
+        - "&7Staffer: &f%issuer%"
+        - "&7IP: &f%ip%"
+        - "&7Blacklistato il: &f%date%"
+        - "&7Prima volta: &f%first%"
+        - "&7Volte in blacklist: &c%times%"
+        - "&8&m----------------------"
+        - "&aClick sinistro &8» &frimuovi dalla blacklist"
+        - "&eClick destro &8» &fcronologia completa"
+
+    empty:
+      material: BARRIER
+      name: "&aNessun giocatore in blacklist"
+      lore:
+        - "&7La lista e' vuota."
+
+    # Placeholder: %page% (numero della pagina di destinazione)
+    previous:
+      material: ARROW
+      name: "&e« Pagina precedente"
+      lore:
+        - "&7Vai alla pagina &f%page%"
+
+    next:
+      material: ARROW
+      name: "&ePagina successiva »"
+      lore:
+        - "&7Vai alla pagina &f%page%"
+
+    # Placeholder: %page% %pages% %total%
+    info:
+      material: PAPER
+      name: "&#EF4444&lBLACKLIST"
+      lore:
+        - "&7Giocatori in blacklist: &f%total%"
+        - "&7Pagina &f%page%&7/&f%pages%"
+        - ""
+        - "&eClick &8» &faggiorna la lista"
+
+  detail:
+    # Placeholder: %victim%
+    title: "&#EF4444%victim% &7» cronologia"
+
+    # Una punizione ancora attiva.
+    # Placeholder: %victim% %number% %id% %issuer% %reason% %ip% %date%
+    active:
+      material: RED_DYE
+      name: "&c&lBlacklist #%number% &8» &cattiva"
+      lore:
+        - "&7Data: &f%date%"
+        - "&7Motivo: &f%reason%"
+        - "&7Staffer: &f%issuer%"
+        - "&7IP: &f%ip%"
+        - "&8ID record: %id%"
+
+    # Una punizione gia' rimossa.
+    # Placeholder aggiuntivi: %removed% %removedby%
+    lifted:
+      material: GRAY_DYE
+      name: "&7Blacklist #%number% &8» &7rimossa"
+      lore:
+        - "&7Data: &f%date%"
+        - "&7Motivo: &f%reason%"
+        - "&7Staffer: &f%issuer%"
+        - "&7IP: &f%ip%"
+        - "&7Rimossa il: &f%removed%"
+        - "&7Rimossa da: &f%removedby%"
+        - "&8ID record: %id%"
+
+    back:
+      material: ARROW
+      name: "&e« Torna alla lista"
+      lore: []
+
+# GUI di /check (alias /c e /calts). I dati arrivano dal proxy: ban, mute, kick
+# e warn da LiteBans, la blacklist dal sistema di Frankie. Qui si configura solo
+# l'aspetto: per ogni voce puoi cambiare "material", "name" e "lore".
+check-gui:
+
+  # Formato delle date mostrate negli item.
+  date-format: "dd/MM/yyyy HH:mm"
+  # Testo usato quando una data non e' disponibile.
+  unknown-date: "sconosciuta"
+  # Testo usato al posto di un campo vuoto (motivo, IP, server...).
+  none: "-"
+  # Data dell'ultimo accesso di chi e' online adesso.
+  now: "adesso"
+  # Punizione senza scadenza.
+  permanent: "permanente"
+  # Virgolette obbligatorie: in YAML yes/no senza virgolette sono booleani.
+  "yes": "&asi'"
+  "no": "&cno"
+
+  # Come viene chiamato lo stato di una punizione nella lore (%state%).
+  states:
+    active: "&cattiva"
+    expired: "&7scaduta"
+    removed: "&7rimossa"
+    event: "&beseguito"
+
+  # Suffissi delle durate: 30g 4h, 15m 30s...
+  duration:
+    day: "g"
+    hour: "h"
+    minute: "m"
+    second: "s"
+
+  # Riempimento delle caselle vuote.
+  filler:
+    enabled: true
+    material: BLACK_STAINED_GLASS_PANE
+
+  # Schermata iniziale: chi e' il giocatore e cosa ha collezionato.
+  profile:
+    # Placeholder: %target%
+    title: "&#38BDF8Scheda &7» &c%target%"
+
+    # Testa del giocatore.
+    # Placeholder: %target% %suffix% %uuid% %ip% %server% %online% %lastseen%
+    #              %bans% %mutes% %kicks% %warns% %blacklists%
+    #              %banned% %muted% %blacklisted%
+    head:
+      name: "&c&l%target%"
+      lore:
+        - "&8&m----------------------"
+        - "&7UUID: &f%uuid%"
+        - "&7IP: &f%ip%"
+        - "&7Online: &f%online%"
+        - "&7Server: &f%server%"
+        - "&7Ultimo accesso: &f%lastseen%"
+        - "&8&m----------------------"
+        - "&7Bannato: &f%banned%"
+        - "&7Mutato: &f%muted%"
+        - "&7In blacklist: &f%blacklisted%"
+
+    close:
+      material: BARRIER
+      name: "&c&lCHIUDI"
+      lore: []
+
+  # I cinque pulsanti della schermata iniziale.
+  # "title" e' il nome della categoria, riusato anche nei titoli delle liste.
+  # Placeholder: %type% %total% %state%
+  categories:
+    ban:
+      title: "Ban"
+      material: REDSTONE_BLOCK
+      name: "&c&l%type%"
+      lore:
+        - "&7Totale: &f%total%"
+        - "&7Attualmente bannato: &f%state%"
+        - ""
+        - "&eClick &8» &fapri la lista"
+
+    mute:
+      title: "Mute"
+      material: BOOK
+      name: "&6&l%type%"
+      lore:
+        - "&7Totale: &f%total%"
+        - "&7Attualmente mutato: &f%state%"
+        - ""
+        - "&eClick &8» &fapri la lista"
+
+    kick:
+      title: "Kick"
+      material: IRON_BOOTS
+      name: "&e&l%type%"
+      lore:
+        - "&7Totale: &f%total%"
+        - ""
+        - "&eClick &8» &fapri la lista"
+
+    warn:
+      title: "Warn"
+      material: PAPER
+      name: "&e&l%type%"
+      lore:
+        - "&7Totale: &f%total%"
+        - ""
+        - "&eClick &8» &fapri la lista"
+
+    blacklist:
+      title: "Blacklist"
+      material: BEDROCK
+      name: "&4&l%type%"
+      lore:
+        - "&7Totale: &f%total%"
+        - "&7Attualmente in blacklist: &f%state%"
+        - ""
+        - "&aClick sinistro &8» &fla blacklist di questo giocatore"
+        - "&eClick destro &8» &ftutti i blacklistati (/blacklistusers)"
+
+  # Mostrato al posto di ban/mute/kick/warn quando LiteBans non e' installato
+  # sul proxy. Placeholder: %type%
+  unavailable:
+    material: BARRIER
+    name: "&8%type%"
+    lore:
+      - "&cLiteBans non e' installato sul proxy."
+      - "&7Questa sezione resta vuota."
+
+  # Lista di una categoria.
+  list:
+    # Placeholder: %type% %target% %page% %pages% %total%
+    title: "&#38BDF8%type% &7» &c%target% &8(%page%/%pages%)"
+
+    empty:
+      material: LIME_DYE
+      name: "&aNessun %type%"
+      lore:
+        - "&7Questo giocatore non ne ha."
+
+    # Placeholder: %page% (numero della pagina di destinazione)
+    previous:
+      material: ARROW
+      name: "&e« Pagina precedente"
+      lore:
+        - "&7Vai alla pagina &f%page%"
+
+    next:
+      material: ARROW
+      name: "&ePagina successiva »"
+      lore:
+        - "&7Vai alla pagina &f%page%"
+
+    # Placeholder: %target%
+    back:
+      material: ARROW
+      name: "&e« Torna alla scheda"
+      lore:
+        - "&7Scheda di &f%target%"
+
+  # Una riga della lista. Il blocco usato dipende dallo stato:
+  #   active  = ancora in corso      expired = scaduta da sola
+  #   removed = revocata da uno staffer      event = kick (e' un evento)
+  # Placeholder: %type% %number% %id% %reason% %executor% %ip% %date%
+  #              %expires% %duration% %scope% %origin% %silent% %state%
+  #              %removedby% %removalreason% %removed%
+  entry:
+    active:
+      material: RED_DYE
+      name: "&c&l%type% #%number% &8» &c%state%"
+      lore:
+        - "&7Motivo: &f%reason%"
+        - "&7Staffer: &f%executor%"
+        - "&7Data: &f%date%"
+        - "&7Durata: &f%duration%"
+        - "&7Scade il: &f%expires%"
+        - "&7Server: &f%origin%"
+        - "&8ID record: %id%"
+
+    expired:
+      material: ORANGE_DYE
+      name: "&6%type% #%number% &8» &7%state%"
+      lore:
+        - "&7Motivo: &f%reason%"
+        - "&7Staffer: &f%executor%"
+        - "&7Data: &f%date%"
+        - "&7Durata: &f%duration%"
+        - "&7Scaduta il: &f%expires%"
+        - "&7Server: &f%origin%"
+        - "&8ID record: %id%"
+
+    # La sotto-lore della revoca: chi l'ha tolta, da quale server e perche'.
+    removed:
+      material: GRAY_DYE
+      name: "&7%type% #%number% &8» &7%state%"
+      lore:
+        - "&7Motivo: &f%reason%"
+        - "&7Staffer: &f%executor%"
+        - "&7Data: &f%date%"
+        - "&7Durata: &f%duration%"
+        - "&7Server: &f%origin%"
+        - "&8&m----------------------"
+        - "&7Rimossa da: &f%removedby%"
+        - "&7Server: &f%origin%"
+        - "&7Motivazione: &f%removalreason%"
+        - "&7Rimossa il: &f%removed%"
+        - "&8ID record: %id%"
+
+    event:
+      material: LIGHT_BLUE_DYE
+      name: "&b%type% #%number%"
+      lore:
+        - "&7Motivo: &f%reason%"
+        - "&7Staffer: &f%executor%"
+        - "&7Data: &f%date%"
+        - "&7Server: &f%origin%"
+        - "&8ID record: %id%"
+
+    # Aggiunto in fondo alla lore delle punizioni che lo staffer puo' togliere
+    # (ban, mute e blacklist ancora attivi, con permesso frankie.check.revoke).
+    revoke-hint:
+      - "&8&m----------------------"
+      - "&aClick sinistro &8» &frevoca"
